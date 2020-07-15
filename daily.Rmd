@@ -1,0 +1,1942 @@
+---
+title: "COVID-19 By Country"
+date: "`r format(Sys.time(), '%B %d, %Y')`"
+output: 
+  html_document: 
+editor_options:
+  chunk_output_type: inline
+---
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+setwd("~/daily_scripts")
+#setwd("~/EconoMedRx Dropbox/Cynthia G/E-value Team/COVID19/LTE Annals Int Med/Markdown files and outputs")
+```
+
+```{css, echo=FALSE}
+.boxBorder {
+     border: 1px solid black;
+     padding: 1px 20px;
+     border-radius: 5px;
+}
+
+.myButton {
+	-moz-box-shadow:inset 0px 1px 0px 0px #ffffff;
+	-webkit-box-shadow:inset 0px 1px 0px 0px #ffffff;
+	box-shadow:inset 0px 1px 0px 0px #ffffff;
+	background:-webkit-gradient( linear, left top, left bottom, color-stop(0.05, #f9f9f9), color-stop(1, #e9e9e9) );
+	background:-moz-linear-gradient( center top, #f9f9f9 5%, #e9e9e9 100% );
+	filter:progid:DXImageTransform.Microsoft.gradient(startColorstr='#f9f9f9', endColorstr='#e9e9e9');
+	background-color:#f9f9f9;
+	-webkit-border-top-left-radius:6px;
+	-moz-border-radius-topleft:6px;
+	border-top-left-radius:6px;
+	-webkit-border-top-right-radius:6px;
+	-moz-border-radius-topright:6px;
+	border-top-right-radius:6px;
+	-webkit-border-bottom-right-radius:6px;
+	-moz-border-radius-bottomright:6px;
+	border-bottom-right-radius:6px;
+	-webkit-border-bottom-left-radius:6px;
+	-moz-border-radius-bottomleft:6px;
+	border-bottom-left-radius:6px;
+text-indent:0;
+	border:1px solid #dcdcdc;
+	display:inline-block;
+	color:#666666;
+	font-family:arial;
+	font-size:20px;
+	font-weight:bold;
+	font-style:normal;
+height:58px;
+	line-height:58px;
+width:500px;
+	text-decoration:none;
+	text-align:center;
+}.myButton:hover {
+	background:-webkit-gradient( linear, left top, left bottom, color-stop(0.05, #e9e9e9), color-stop(1, #f9f9f9) );
+	background:-moz-linear-gradient( center top, #e9e9e9 5%, #f9f9f9 100% );
+	filter:progid:DXImageTransform.Microsoft.gradient(startColorstr='#e9e9e9', endColorstr='#f9f9f9');
+	background-color:#e9e9e9;
+}.myButton:active {
+	position:relative;
+	top:1px;
+```
+**The COVID-19 Econometric Modeling Team**
+
+Cynthia L. Gong, PharmD, PhD  
+Nadine K. Zawadzki, MPH (PhD Cand.)  
+Roy S. Zawadzki, BS  
+Sang K. Cho, PharmD, MPH, PhD  
+Joel W. Hay, PhD  
+
+| Document Table of Contents                                                                          |
+| ----------------------------------------------------------------------------------------------------|
+| [Newly Reported Patients By Total Confirmed Patients](#new_report_by_total)                         |
+| [Log of Cumulative Reported Patients](#log_cum_report)                                              |
+| [Plots by Country with Ridge Regression Models](#ridge_by_country)                                  |
+| [Mathematical Presentation of COVID-19 Transmission Dynamics](#r_proof)  |
+| [Calculating Deaths per 1% Increase in Unemployment](#unemployment_calc)                            |
+| [Calculating Deaths per Million](#death_calc)                                                       |
+
+<div style="text-align: center">
+<div class="myButton">
+
+[**Please Take Our COVID SURVEY! (Click Here)**](https://www.google.com/url?q=https%3A%2F%2Fusc.qualtrics.com%2Fjfe%2Fform%2FSV_9Qqhify98dXlyiF&sa=D&sntz=1&usg=AFQjCNG6ImRy3yxgZQarAFePHhPzgtvPpA)
+
+</div>
+</div>
+
+```{r daily cases panel, include=FALSE}
+library(readr)
+library(knitr)
+library(tidyverse)
+library(zoo)
+library(glmnet)
+library(readxl)
+library(ggrepel)
+library(rsconnect)
+library(gifski)
+update_data <- "https://raw.githubusercontent.com/CSSEGISandData/COVID-19/master/csse_covid_19_data/csse_covid_19_time_series/time_series_covid19_confirmed_global.csv"
+raw_data <- read_csv(update_data)
+#colnames(raw_data) <- c("province", "country", "lat", "long", seq(as.Date("2020-01-22"), Sys.Date(), by = "days")) #run this if late PM
+colnames(raw_data) <- c("province", "country", "lat", "long", seq(as.Date("2020-01-22"), Sys.Date()-1, by = "days")) #run this in AM
+
+#create subset of each country of interest
+canada <- subset(raw_data, country == "Canada")
+china_all <- subset(raw_data, country == "China")
+  china_nohubei <- subset(china_all, province != "Hubei")
+  china_nohubei$country = "China_nohubei"
+france <- subset(raw_data, country == "France")
+germany <- subset(raw_data, country == "Germany")
+hubei <- subset(raw_data, province == "Hubei")
+iran <- subset(raw_data, country == "Iran")
+italy <- subset(raw_data, country == "Italy")
+japan <- subset(raw_data, country == "Japan")
+korea <- subset(raw_data, country == "Korea, South")
+netherlands <- subset(raw_data, country == "Netherlands")
+norway <- subset(raw_data, country=="Norway")
+spain <- subset(raw_data, country == "Spain")
+sweden <- subset(raw_data, country == "Sweden")
+switzerland <- subset(raw_data, country == "Switzerland")
+uk <- subset(raw_data, country == "United Kingdom")
+us <- subset(raw_data, country == "US")
+
+#create global dataset for manipulation based on raw data
+all_countries <- rbind(canada, china_nohubei, france, germany, hubei, iran, italy, japan, korea,
+                       netherlands, norway, spain, sweden, switzerland, uk, us)
+#View(all_countries)
+
+#for US and china_nohubei, must sum cases over all province/states
+#first put data into long format 
+all_countries_long <- all_countries %>% gather(date, cases, colnames(raw_data)[5:ncol(raw_data)])
+#convert date (chr) into Date
+all_countries_long$date <- as.Date(as.numeric(all_countries_long$date), origin="1970-01-01")
+#sum cases for us, france, and china_nohubei
+canada_sum <- all_countries_long %>%
+  subset(country=="Canada") %>% group_by(date) %>%
+  summarise(cases = sum(cases, na.rm = FALSE))
+#head(china_nohubei_sum)
+
+china_nohubei_sum <- all_countries_long %>% 
+  subset(country=="China_nohubei") %>% group_by(date) %>%
+  summarise(cases = sum(cases, na.rm = FALSE))
+#head(china_nohubei_sum)
+
+france_sum <- all_countries_long %>% 
+  subset(country=="France") %>% group_by(date) %>%
+  summarise(cases = sum(cases, na.rm = FALSE))
+#head(france_sum)
+
+netherlands_sum <- all_countries_long %>%
+  subset(country=="Netherlands") %>% group_by(date) %>%
+  summarise(cases=sum(cases, na.rm=FALSE))
+
+uk_sum <- all_countries_long %>% 
+  subset(country=="United Kingdom") %>% group_by(date) %>%
+  summarise(cases = sum(cases, na.rm = FALSE))
+
+us_sum <- all_countries_long %>% 
+  subset(country=="US") %>% group_by(date) %>%
+  summarise(cases = sum(cases, na.rm = FALSE))
+#head(us_sum)
+#create new datasets for each country
+#i realize there's probably a faster way to do this but this gets it done
+  canada <- cbind(rep(canada[1,2]), canada_sum)
+  china_nohubei <- cbind(rep(china_nohubei[1,2]), china_nohubei_sum)
+  france <- cbind(rep(france[1,2]), france_sum)
+  netherlands <- cbind(rep(netherlands[1,2]), netherlands_sum)
+  uk <- cbind(rep(uk[1,2]), uk_sum) 
+  us <- cbind(rep(us[1,2]), us_sum)  
+  
+  germany <- all_countries_long %>% subset(country == "Germany")
+  germany <- germany[,c(2,5,6)]
+  #head(germany)
+
+  hubei <- all_countries_long %>% subset(province == "Hubei")
+  hubei$country = "Hubei"
+  hubei <- hubei[,c(2,5,6)]
+  #head(hubei)
+
+  italy <- all_countries_long %>% subset(country == "Italy")
+  italy <- italy[,c(2,5,6)]
+  #head(italy)
+  
+  iran <- all_countries_long %>% subset(country == "Iran")
+  iran <- iran[,c(2,5,6)]
+  #head(iran)
+    
+  japan <- all_countries_long %>% subset(country == "Japan")
+  japan <- japan[,c(2,5,6)]
+  #head(japan)
+  
+  korea <- all_countries_long %>% subset(country == "Korea, South")
+  korea$country = "Korea"  
+  korea <- korea[,c(2,5,6)]
+  #head(korea)
+  
+  norway <- all_countries_long %>% subset(country == "Norway")
+  norway <- norway[,c(2,5,6)]
+  
+  spain <- all_countries_long %>% subset(country == "Spain")
+  spain <- spain[,c(2,5,6)]
+  #head(spain)
+  
+  sweden <- all_countries_long %>% subset(country == "Sweden")
+  sweden <- sweden[,c(2,5,6)]
+
+  switzerland <- all_countries_long %>% subset(country == "Switzerland")
+  switzerland <- switzerland[,c(2,5,6)]
+
+#create clean dataset with just countries and cases
+countries <- rbind(canada, china_nohubei, france, germany, hubei, iran, italy, japan, korea,
+                   netherlands, norway, spain, sweden, switzerland, uk, us)
+#View(countries)
+
+#calculate first_diff of cases
+countries <- countries %>% group_by(country) %>% 
+  mutate(first_diff = cases - lag(cases))
+
+#add column for ln(cases)
+countries$log_cum_cases <- log(countries$cases)
+
+#first_diff of ln(cases)
+countries <- countries %>% group_by(country) %>% 
+  mutate(first_diff_log_cases = log_cum_cases - lag(log_cum_cases))
+
+####################################################m
+#create dataset starting with cases > 100 at time 0#
+####################################################
+
+countries_100 <- countries %>% subset(cases >99) 
+countries_100 <- countries_100 %>% group_by(country) %>%
+  mutate(time = as.numeric(date) - min(as.numeric(date)))
+#create time_squared variable
+countries_100$time_sq <- countries_100$time^2
+#create time_3 variable
+countries_100$time_3 <- countries_100$time^3
+#create root_time variable
+countries_100$time_sqrt <- sqrt(countries_100$time)
+#create t^1/3 variable
+countries_100$time_cubrt <- countries_100$time^(1/3)
+#create t^-1 variable
+countries_100$time_inv <- countries_100$time^(-1)
+
+countries_100 <- countries_100 %>% group_by(country) %>% slice(-1)
+
+#create day variable
+#countries_100 <- countries_100 %>% group_by(country) %>%
+#  mutate(day = rep(1:7, length.out=length(country)))
+
+```
+
+```{r daily deaths panel, include=FALSE}
+update_deaths <- "https://raw.githubusercontent.com/CSSEGISandData/COVID-19/master/csse_covid_19_data/csse_covid_19_time_series/time_series_covid19_deaths_global.csv"
+raw_deaths <- read_csv(update_deaths)
+colnames(raw_deaths) <- c("province", "country", "lat", "long", seq(as.Date("2020-01-22"), Sys.Date()-1, by = "days")) #run this if AM
+#colnames(raw_deaths) <- c("province", "country", "lat", "long", seq(as.Date("2020-01-22"), Sys.Date()-1, by = "days")) #run this if late PM
+deaths.canada <- subset(raw_deaths, country=="Canada")
+deaths.china_all <- subset(raw_deaths, country == "China")
+deaths.china_nohubei <- subset(deaths.china_all, province != "Hubei")
+  deaths.china_nohubei$country = "China_nohubei"
+deaths.france <- subset(raw_deaths, country == "France")
+deaths.germany <- subset(raw_deaths, country == "Germany")
+deaths.hubei <- subset(raw_deaths, province == "Hubei")
+deaths.italy <- subset(raw_deaths, country == "Italy")
+deaths.iran <- subset(raw_deaths, country == "Iran")
+deaths.japan <- subset(raw_deaths, country == "Japan")
+deaths.korea <- subset(raw_deaths, country == "Korea, South")
+deaths.netherlands <- subset(raw_deaths, country == "Netherlands")
+deaths.norway <- subset(raw_deaths, country == "Norway")
+deaths.spain <- subset(raw_deaths, country == "Spain")
+deaths.sweden <- subset(raw_deaths, country == "Sweden")
+deaths.switzerland <- subset(raw_deaths, country == "Switzerland")
+deaths.uk <- subset(raw_deaths, country == "United Kingdom")
+deaths.us <- subset(raw_deaths, country == "US")
+all_deaths <- rbind(deaths.canada, deaths.china_nohubei, deaths.france, deaths.germany, deaths.hubei, 
+                    deaths.iran, deaths.italy, deaths.japan, deaths.korea, deaths.netherlands,
+                    deaths.norway, deaths.spain, deaths.sweden, deaths.switzerland, deaths.uk, deaths.us)
+all_deaths_long <- all_deaths %>% gather(date, deaths, colnames(raw_deaths)[5:ncol(raw_deaths)])
+all_deaths_long$date <- as.Date(as.numeric(all_deaths_long$date), origin="1970-01-01")
+#sum deaths for us, france, netherlands, and china_nohubei
+deaths.canada_sum <- all_deaths_long %>% 
+  subset(country=="Canada") %>% group_by(date) %>%
+  summarise(deaths = sum(deaths, na.rm = FALSE))
+head(canada_sum)
+deaths.netherlands_sum <- all_deaths_long %>%
+  subset(country=="Netherlands") %>% group_by(date) %>%
+  summarise(deaths = sum(deaths, na.rm = FALSE))
+deaths.us_sum <- all_deaths_long %>% 
+  subset(country=="US") %>% group_by(date) %>%
+  summarise(deaths = sum(deaths, na.rm = FALSE))
+head(us_sum)
+deaths.france_sum <- all_deaths_long %>% 
+  subset(country=="France") %>% group_by(date) %>%
+  summarise(deaths = sum(deaths, na.rm = FALSE))
+head(france_sum)
+deaths.china_nohubei_sum <- all_deaths_long %>% 
+  subset(country=="China_nohubei") %>% group_by(date) %>%
+  summarise(deaths = sum(deaths, na.rm = FALSE))
+#head(china_nohubei_sum)
+deaths.uk_sum <- all_deaths_long %>% 
+  subset(country=="United Kingdom") %>% group_by(date) %>%
+  summarise(deaths = sum(deaths, na.rm = FALSE))
+#create new datasets for each country
+#i realize there's probably a faster way to do this but this gets it done
+deaths.canada <- cbind(rep(deaths.canada[1,2]), deaths.canada_sum)
+deaths.china_nohubei <- cbind(rep(deaths.china_nohubei[1,2]), deaths.china_nohubei_sum)
+deaths.netherlands <- cbind(rep(deaths.netherlands[1,2]), deaths.netherlands_sum)
+deaths.us <- cbind(rep(deaths.us[1,2]), deaths.us_sum)
+deaths.uk <- cbind(rep(deaths.uk[1,2]), deaths.uk_sum)
+deaths.france <- cbind(rep(deaths.france[1,2]), deaths.france_sum)
+deaths.germany <- all_deaths_long %>% subset(country == "Germany")
+deaths.germany <- deaths.germany[,c(2,5,6)]
+deaths.hubei <- all_deaths_long %>% subset(province == "Hubei")
+deaths.hubei$country = "Hubei"
+deaths.hubei <- deaths.hubei[,c(2,5,6)]
+deaths.iran <- all_deaths_long %>% subset(country == "Iran")
+deaths.iran <- deaths.iran[,c(2,5,6)]
+deaths.italy <- all_deaths_long %>% subset(country == "Italy")
+deaths.italy <- deaths.italy[,c(2,5,6)]
+deaths.japan <- all_deaths_long %>% subset(country == "Japan")
+deaths.japan <- deaths.japan[,c(2,5,6)]
+deaths.korea <- all_deaths_long %>% subset(country == "Korea, South")
+deaths.korea$country = "Korea"  
+deaths.korea <- deaths.korea[,c(2,5,6)]
+deaths.spain <- all_deaths_long %>% subset(country == "Spain")
+deaths.spain <- deaths.spain[,c(2,5,6)]
+deaths.norway <- all_deaths_long %>% subset(country == "Norway")
+deaths.norway <- deaths.norway[,c(2,5,6)]
+deaths.sweden <- all_deaths_long %>% subset(country == "Sweden")
+deaths.sweden <- deaths.sweden[,c(2,5,6)]
+deaths.switzerland <- all_deaths_long %>% subset(country == "Switzerland")
+deaths.switzerland <- deaths.switzerland[,c(2,5,6)]
+#create clean dataset with just countries and deaths
+deaths.countries <- rbind(deaths.canada, deaths.china_nohubei, deaths.france, deaths.germany, deaths.hubei, 
+                          deaths.iran, deaths.italy, deaths.japan, deaths.korea, deaths.netherlands,
+                          deaths.norway, deaths.spain, deaths.sweden, deaths.switzerland, deaths.uk, deaths.us)
+#View(countries)
+#calculate first_diff of deaths
+deaths.countries <- deaths.countries %>% group_by(country) %>% 
+  mutate(first_diff = deaths - lag(deaths))
+#add column for ln(deaths)
+deaths.countries$log_cum_deaths <- log(deaths.countries$deaths)
+#first_diff of ln(deaths)
+deaths.countries <- deaths.countries %>% group_by(country) %>% 
+  mutate(first_diff_log_deaths = log_cum_deaths - lag(log_cum_deaths))
+
+####################################################
+#create dataset starting with deaths > 10 at time 0#
+####################################################
+deaths.countries_10 <- deaths.countries %>% subset(deaths >9) 
+#%>%
+
+# group_by(country) %>% slice(-n()) #this code was to deal with 3dMA data
+deaths.countries_10 <- deaths.countries_10 %>% group_by(country) %>%
+  mutate(time = as.numeric(date) - min(as.numeric(date)))
+#create time_squared variable
+deaths.countries_10$time_sq <- deaths.countries_10$time^2
+#create time_3 variable
+deaths.countries_10$time_3 <- deaths.countries_10$time^3
+#create root_time variable
+deaths.countries_10$time_sqrt <- sqrt(deaths.countries_10$time)
+#create t^1/3 variable
+deaths.countries_10$time_cubrt <- deaths.countries_10$time^(1/3)
+#create t^-1 variable
+deaths.countries_10$time_inv <- deaths.countries_10$time^(-1)
+
+deaths.countries_10 <- deaths.countries_10 %>% group_by(country) %>% slice(-1)
+
+#deaths.countries_10 <- deaths.countries_10 %>% group_by(country) %>%
+#  mutate(day = rep(1:7, length.out=length(country)))
+
+#write_csv(deaths.countries_10, "C:/Users/thia9/EconoMedRx Dropbox/Cynthia G/E-value Team/COVID19/Daily Datafiles/deaths_032720.csv")
+```
+
+```{r calculating total global deaths, include=FALSE}
+#calculate total global deaths
+
+raw_deaths_long <- raw_deaths %>% gather(date, deaths, colnames(raw_deaths)[5:ncol(raw_deaths)])
+colnames(raw_deaths) <- c("province", "country", "lat", "long", seq(as.Date("2020-01-22"), Sys.Date()-1, by = "days")) #run this if AM
+
+raw_deaths_long$date <- as.Date(as.numeric(raw_deaths_long$date), origin="1970-01-01")
+
+total_global_deaths <- raw_deaths_long %>% group_by(country, date) %>%
+  summarise(deaths = sum(deaths, na.rm = TRUE))
+
+total_global_deaths <- total_global_deaths[,-1]
+
+total_global_deaths <- raw_deaths_long %>% group_by(date) %>%
+  summarise(deaths = sum(deaths, na.rm = TRUE))
+
+total_global_deaths$log_deaths <- log(total_global_deaths$deaths)
+
+head(total_global_deaths)
+```
+
+```{r constructing datafiles for ridge regressions, include=FALSE}
+# functions for metrics
+R2 = function(observed, predicted) {1 - sum((observed - predicted)^2) / sum((observed - mean(observed))^2)}
+
+Adj_R2 = function (R2, N, p) {1-(((1-R2)*(N-1))/(N-p-1))}
+
+RMSE = function(observed, predicted) sqrt(mean((observed - predicted)^2))
+#########################################################
+#create subset of countries_100 with columns of interest#
+#########################################################
+countries_100_sample <- countries_100[,c(1,6:ncol(countries_100))]
+   countries_100_sample$time_inv[is.infinite(countries_100_sample$time_inv)] = 0 #removing inf values in 1/time var
+
+deaths.countries_10_sample <- deaths.countries_10[,c(1,6:ncol(deaths.countries_10))]      
+    deaths.countries_10_sample$time_inv[is.infinite(deaths.countries_10_sample$time_inv)] = 0 #removing inf values in 1/time var
+##########################
+#create subset by country#
+##########################
+canada_diff_ln <- subset(countries_100_sample, countries_100_sample$country == "Canada", select = c(2:ncol(countries_100_sample)))
+china_nohubei_diff_ln <- subset(countries_100_sample, countries_100_sample$country == "China_nohubei", select = c(2:ncol(countries_100_sample)))
+  china_nohubei_diff_ln[is.na(china_nohubei_diff_ln)] <- 0
+france_diff_ln <- subset(countries_100_sample, countries_100_sample$country == "France", select = c(2:ncol(countries_100_sample)))
+germany_diff_ln <- subset(countries_100_sample, countries_100_sample$country == "Germany", select = c(2:ncol(countries_100_sample)))
+hubei_diff_ln <- subset(countries_100_sample, countries_100_sample$country == "Hubei", select = c(2:ncol(countries_100_sample)))
+  hubei_diff_ln[is.na(hubei_diff_ln)] <- 0
+iran_diff_ln <- subset(countries_100_sample, countries_100_sample$country =="Iran", select = c(2:ncol(countries_100_sample)))
+italy_diff_ln <- subset(countries_100_sample, countries_100_sample$country == "Italy", select = c(2:ncol(countries_100_sample)))
+japan_diff_ln <- subset(countries_100_sample, countries_100_sample$country == "Japan", select = c(2:ncol(countries_100_sample)))
+korea_diff_ln <- subset(countries_100_sample, countries_100_sample$country == "Korea", select = c(2:ncol(countries_100_sample)))
+spain_diff_ln <- subset(countries_100_sample, countries_100_sample$country == "Spain", select = c(2:ncol(countries_100_sample)))
+netherlands_diff_ln <- subset(countries_100_sample, countries_100_sample$country == "Netherlands", select = c(2:ncol(countries_100_sample)))
+norway_diff_ln <- subset(countries_100_sample, countries_100_sample$country == "Norway", select = c(2:ncol(countries_100_sample)))
+sweden_diff_ln <- subset(countries_100_sample, countries_100_sample$country == "Sweden", select = c(2:ncol(countries_100_sample)))
+switzerland_diff_ln <- subset(countries_100_sample, countries_100_sample$country == "Switzerland", select = c(2:ncol(countries_100_sample)))
+uk_diff_ln <- subset(countries_100_sample, countries_100_sample$country == "United Kingdom", select = c(2:ncol(countries_100_sample)))
+us_diff_ln <- subset(countries_100_sample, countries_100_sample$country == "US", select = c(2:ncol(countries_100_sample)))
+global_diff_ln <- subset(countries_100_sample, select = c(2:ncol(countries_100_sample)))
+   global_diff_ln[is.na(global_diff_ln)] <- 0
+   
+deaths.canada_diff_ln <- subset(deaths.countries_10_sample, deaths.countries_10_sample$country == "Canada", select = c(2:ncol(deaths.countries_10_sample)))
+deaths.china_nohubei_diff_ln <- subset(deaths.countries_10_sample, deaths.countries_10_sample$country == "China_nohubei", select = c(2:ncol(deaths.countries_10_sample)))
+  deaths.china_nohubei_diff_ln[is.na(deaths.china_nohubei_diff_ln)] <- 0
+deaths.france_diff_ln <- subset(deaths.countries_10_sample, deaths.countries_10_sample$country == "France", select = c(2:ncol(deaths.countries_10_sample)))
+deaths.germany_diff_ln <- subset(deaths.countries_10_sample, deaths.countries_10_sample$country == "Germany", select = c(2:ncol(deaths.countries_10_sample)))
+deaths.hubei_diff_ln <- subset(deaths.countries_10_sample, deaths.countries_10_sample$country == "Hubei", select = c(2:ncol(deaths.countries_10_sample)))
+  deaths.hubei_diff_ln[is.na(deaths.hubei_diff_ln)] <- 0
+deaths.iran_diff_ln <- subset(deaths.countries_10_sample, deaths.countries_10_sample$country =="Iran", select = c(2:ncol(deaths.countries_10_sample)))
+deaths.italy_diff_ln <- subset(deaths.countries_10_sample, deaths.countries_10_sample$country == "Italy", select = c(2:ncol(deaths.countries_10_sample)))
+deaths.japan_diff_ln <- subset(deaths.countries_10_sample, deaths.countries_10_sample$country == "Japan", select = c(2:ncol(deaths.countries_10_sample)))
+deaths.korea_diff_ln <- subset(deaths.countries_10_sample, deaths.countries_10_sample$country == "Korea", select = c(2:ncol(deaths.countries_10_sample)))
+deaths.spain_diff_ln <- subset(deaths.countries_10_sample, deaths.countries_10_sample$country == "Spain", select = c(2:ncol(deaths.countries_10_sample)))
+deaths.netherlands_diff_ln <- subset(deaths.countries_10_sample, deaths.countries_10_sample$country == "Netherlands", select = c(2:ncol(deaths.countries_10_sample)))
+deaths.norway_diff_ln <- subset(deaths.countries_10_sample, deaths.countries_10_sample$country == "Norway", select = c(2:ncol(deaths.countries_10_sample)))
+deaths.sweden_diff_ln <- subset(deaths.countries_10_sample, deaths.countries_10_sample$country == "Sweden", select = c(2:ncol(deaths.countries_10_sample)))
+deaths.switzerland_diff_ln <- subset(deaths.countries_10_sample, deaths.countries_10_sample$country == "Switzerland", select = c(2:ncol(deaths.countries_10_sample)))
+deaths.uk_diff_ln <- subset(deaths.countries_10_sample, deaths.countries_10_sample$country == "United Kingdom", select = c(2:ncol(deaths.countries_10_sample)))
+deaths.us_diff_ln <- subset(deaths.countries_10_sample, deaths.countries_10_sample$country == "US", select = c(2:ncol(deaths.countries_10_sample)))
+deaths.global_diff_ln <- subset(deaths.countries_10_sample, select = c(2:ncol(deaths.countries_10_sample)))
+   deaths.global_diff_ln[is.na(deaths.global_diff_ln)] <- 0   
+```
+
+---
+
+# <a id="new_report_by_total"></a>Newly Reported Patients By Total Confirmed Patients 
+
+## {.tabset}
+
+### Cases
+
+```{r first diff 7-day MA daily cases by total cases, echo=FALSE, warning=FALSE, message=FALSE, fig.align='center', fig.width=10, fig.asp=.45}
+options(scipen=999)
+#library(xlsx)
+library(glmnet)
+library(ggplot2)
+library(scales)
+library(directlabels)
+library(plotly)
+library(RColorBrewer)
+library(ggrepel)
+library(gganimate)
+library(zoo)
+
+today = format((Sys.Date()), '%m%d%y')
+covid <- read.csv("Daily_Datafiles/daily_latest.csv")
+
+# Create a functino that captures 7-day moving average, by COUNTRY AND TIME
+get.mav <- function(first_diff,n=7){
+  require(zoo)
+  if(is.na(first_diff[1])) first_diff[1] <- mean(first_diff,na.rm=TRUE)
+  first_diff <- na.locf(first_diff,na.rm=FALSE)
+  if(length(first_diff)<n) return(first_diff)
+  c(first_diff[1:(n-1)],rollapply(first_diff,width=n,mean,align="right"))  
+}
+covid <- with(covid,covid[order(country,time),])
+
+
+covid$first_diff.7day_moving_avg <- 
+  unlist(aggregate(first_diff~country,covid,get.mav,na.action=NULL,n=7)$first_diff)
+covid$first_diff.7day_moving_avg  <- ceiling(covid$first_diff.7day_moving_avg)
+
+#write_csv(covid, "~/EconoMedRx Dropbox/Nadine Zawadzki/E-value Team/COVID19/Daily Datafiles/US_cases_MA_040320.csv")
+
+colorcount <- length(unique(covid$country))
+mycolors <- colorRampPalette(brewer.pal(12, "Set3"))(colorcount)
+mylines <- c("solid", "22", "42", "44", "13", "1343", "73", "2262", "12223242",
+             "F282", "F4448444", "224282F2", "F1", "22", "1343", "2263")
+
+## PLOT - I am making this to strat at the number of cases = 500 because getting moving average is tricky for first 6 observations
+plot.7dayMAcases <-
+  ggplot(covid, aes(x=cases, y=first_diff.7day_moving_avg, col=country)) +
+  geom_line(aes(linetype=country, color=country), size=0.5) +
+  scale_fill_manual(values = mycolors) +
+  scale_linetype_manual(values = mylines)+
+  scale_x_continuous(limits = c(500, NA), trans='log10',labels= comma) +
+  scale_y_continuous(trans='log10') +
+  ggtitle("New Cases By Total Confirmed Cases*") +
+  xlab("Total confirmed cases (log scale)") +
+  ylab("Average daily new cases \n in past 7 days (log scale)") +
+  labs(caption = "*Adapted from https://aatishb.com/covidtrends/.") +
+  geom_dl(aes(label = country), method = list(dl.combine("last.points"), cex = 0.8)) +
+  theme(plot.title = element_text(size=16, face="bold", hjust=0.5)) +
+  theme(legend.position="none") 
+
+#use this for animated plot
+#file_renderer(dir = ".", prefix = "gganim_plot", overwrite = FALSE)
+#plot.7dayMAcases_animated <- plot.7dayMAcases + transition_reveal(cases) + ease_aes("linear")
+#foo1 <- animate(plot.7dayMAcases_animated, nframes=1000, duration=20, fps=5, rewind=F, height=500, width=1000)
+#foo1
+
+#use this for static plot
+plot.7dayMAcases
+
+# use this for interactive plot
+plot.7dayMAcases_interactive = ggplotly(plot.7dayMAcases, tooltip="text") %>%
+ layout(annotations = 
+ list(x = 1, y = -0.112, text = "*Adapted from https://aatishb.com/covidtrends/.", 
+      showarrow = F, xref='paper', yref='paper', 
+      xanchor='right', yanchor='auto', xshift=0, yshift=0,
+      font=list(size=9, color="black"))
+) %>% 
+ layout(annotations = 
+ list(x = 0.18, y = 0.98, text = "Hover mouse over plot \n to identify countries.", 
+      showarrow = F, xref='paper', yref='paper', 
+      xanchor='right', yanchor='auto', xshift=0, yshift=0,
+      font=list(size=12, color="black"))
+)
+
+#plot.7dayMAcases_interactive
+```
+
+### Deaths
+
+```{r first diff 7-day MA daily deaths by total deaths, echo=FALSE, warning=FALSE, message=FALSE, fig.align='center', fig.width=10, fig.asp=.45}
+options(scipen=999)
+#library(xlsx)
+library(glmnet)
+library(ggplot2)
+library(scales)
+library(directlabels)
+library(plotly)
+
+today = format((Sys.Date()), '%m%d%y')
+covid <- read.csv("Daily_Datafiles/deaths_latest.csv")
+
+# Create a functino that captures 7-day moving average, by COUNTRY AND TIME
+get.mav <- function(first_diff,n=7){
+  require(zoo)
+  if(is.na(first_diff[1])) first_diff[1] <- mean(first_diff,na.rm=TRUE)
+  first_diff <- na.locf(first_diff,na.rm=FALSE)
+  if(length(first_diff)<n) return(first_diff)
+  c(first_diff[1:(n-1)],rollapply(first_diff,width=n,mean,align="right"))  
+}
+covid <- with(covid,covid[order(country,time),])
+
+
+covid$first_diff.7day_moving_avg <- 
+  unlist(aggregate(first_diff~country,covid,get.mav,na.action=NULL,n=7)$first_diff)
+covid$first_diff.7day_moving_avg  <- ceiling(covid$first_diff.7day_moving_avg)
+
+#write_csv(covid, "~/EconoMedRx Dropbox/Nadine Zawadzki/E-value Team/COVID19/Daily Datafiles/US_deaths_MA_040320.csv")
+
+## PLOT - I am making this to strat at the number of cases = 500 because getting moving average is tricky for first 6 observations
+plot.7dayMAdeaths <- 
+  ggplot(covid, aes(x=deaths, y=first_diff.7day_moving_avg, col=country)) + 
+  geom_line(aes(linetype=country, color=country), size=0.5) +
+  scale_fill_manual(values = mycolors) +
+  scale_linetype_manual(values = mylines)+
+  scale_x_continuous(limits = c(500, NA), trans='log10',labels= comma) +
+  scale_y_continuous(trans='log10') +
+  ggtitle("New Deaths By Total Confirmed Deaths*") +
+  xlab("Total confirmed deaths (log scale)") +
+  ylab("Average daily new deaths \n in past 7 days (log scale)") +
+  labs(caption = "*Adapted from https://aatishb.com/covidtrends/.") +
+  geom_dl(aes(label = country), method = list(dl.combine("last.points"), cex = 0.8)) +
+  theme(plot.title = element_text(size=16, face="bold", hjust=0.5)) +
+  theme(legend.position="none")  
+
+#use this for animated plot
+#file_renderer(dir = ".", prefix = "gganim_plot", overwrite = FALSE)
+#plot.7dayMAdeaths_animated <- plot.7dayMAdeaths + transition_reveal(deaths) + ease_aes("linear")
+#foo2 <- animate(plot.7dayMAdeaths_animated, nframes=1000, duration=20, fps=5, rewind=F, height=500, width=1000)
+#foo2
+
+#use this for static plot
+plot.7dayMAdeaths
+
+# use this for interactive plot
+plot.7dayMAdeaths_interactive = ggplotly(plot.7dayMAdeaths, hoverinfo="text") %>%
+ layout(annotations = 
+ list(x = 1, y = -0.112, text = "*Adapted from https://aatishb.com/covidtrends/.", 
+      showarrow = F, xref='paper', yref='paper', 
+      xanchor='right', yanchor='auto', xshift=0, yshift=0,
+      font=list(size=9, color="black"))
+) %>% 
+ layout(annotations = 
+ list(x = 0.18, y = 0.98, text = "Hover mouse over plot \n to identify countries.", 
+      showarrow = F, xref='paper', yref='paper', 
+      xanchor='right', yanchor='auto', xshift=0, yshift=0,
+      font=list(size=12, color="black"))
+)
+#plot.7dayMAdeaths_interactive
+```
+
+## {-}
+
+<div style="text-align: center">
+
+[**CLICK HERE to view a mathematical presentation of COVID-19 transmission dynamics**](#r_proof)
+
+</div>
+
+<div style="text-align: right">
+<font size="2">
+<a href="#top">Back to top</a>
+</font> 
+</div>
+---
+
+# <a id="log_cum_report"></a>Log of Cumulative Reported Patients 
+
+## {.tabset}
+
+### Cases
+
+```{r plot log cum cases, echo=FALSE, warning=FALSE, fig.align='center', fig.width=10, fig.asp=.45}
+library(RColorBrewer)
+#plot log of cases over time
+colorcount <- length(unique(countries_100$country))
+mycolors <- colorRampPalette(brewer.pal(12, "Set3"))(colorcount)
+mylines <- c("solid", "22", "42", "44", "13", "1343", "73", "2262", "12223242",
+             "F282", "F4448444", "224282F2", "F1", "22", "1343", "2263")
+
+plot.daily_log_cases <- 
+  ggplot(countries_100, aes(x=time, y=log_cum_cases, col=country)) +
+  geom_line(aes(linetype=country, color=country), size=0.5) +
+  scale_fill_manual(values = mycolors) +
+  scale_linetype_manual(values = mylines)+
+  scale_x_continuous(limits = c(0, 100), breaks=seq(0,100,by=10), labels=seq(0,100,by=10)) +
+  scale_y_continuous(limits = c(0, 16)) +
+  ggtitle("Log of Cumulative Cases Since 100th Case Reported") +
+  xlab("Days Since 100th Case Reported") +
+  ylab("Log of Cumulative Cases") +
+  theme(plot.title = element_text(size=16, face="bold", hjust=0.5)) +
+  theme(legend.position = "none") +
+#  geom_text_repel(data=countries_100[countries_100$date==Sys.Date()-1,],aes(label=country),hjust=0.7,vjust=1)
+  geom_dl(aes(label = country), method = list(dl.combine("last.points"), cex = 0.8)) 
+
+#use this for static plot
+plot.daily_log_cases
+
+#use this for animated plot
+#plot.daily_log_cases_animated <- plot.daily_log_cases + transition_reveal(time) + ease_aes("linear")
+#foo3 <- animate(plot.daily_log_cases_animated, nframes=1000, duration=20, fps=5, rewind=F, height=500, width=1000)
+#foo3
+```
+
+### Deaths
+
+```{r plot log cum deaths, echo=FALSE, warning=FALSE, fig.align='center', fig.width=10, fig.asp=.45}
+#plot log cumulative deaths over time
+plot.daily_log_deaths <- 
+  ggplot(deaths.countries_10, aes(x=time, y=log_cum_deaths, col=country)) +
+  geom_line(aes(linetype=country, color=country), size=0.5) +
+  scale_fill_manual(values = mycolors) +
+  scale_linetype_manual(values = mylines) +
+  scale_x_continuous(limits = c(0, 100), breaks=seq(0,100,by=10), labels=seq(0,100,by=10)) +
+  scale_y_continuous(limits = c(0, 16)) +
+  ggtitle("Log of Cumulative Deaths since 10th Death Reported") +
+  xlab("Days since 10th Death Reported") +
+  ylab("Log of Cumulative Deaths") +
+  theme(plot.title = element_text(size=16, face="bold", hjust=0.5)) +
+  theme(legend.position = "none") +
+#  geom_text_repel(data=deaths.countries_10[deaths.countries_10$date==Sys.Date()-1,],aes(label=country),hjust=0.7,vjust=1)
+  geom_dl(aes(label = country), method = list(dl.combine("last.points"), cex = 0.8)) 
+
+#use this for static plot
+plot.daily_log_deaths
+
+#use this for animated plot
+#plot.daily_log_deaths_animated <- plot.daily_log_deaths + transition_reveal(time) + ease_aes("linear")
+#foo4 <- animate(plot.daily_log_deaths_animated, nframes=1000, duration=20, fps=5, rewind=F, height=500, width=1000)
+#foo4
+```
+
+## {-}
+
+<div style="text-align: right">
+<font size="2">
+<a href="#top">Back to top</a>
+</font> 
+</div>
+---
+
+# <a id="ridge_by_country"></a>Plots by Country with Ridge Regression Models
+
+- Figures are the first difference of ln(cumulative cases) or ln(cumulative deaths) since Day 0.
+- Day 0 defined as day since 100th case reported or day since 10th death reported.
+- Linear ridge regression models are fitted to the data as a function of time, time$^2$, time$^3$, time$^{1/2}$, time$^{1/3}$, and time$^{-1}$.
+
+## Cases {.tabset}
+
+### Global 
+
+```{r global ridge cases, warning=FALSE, include=FALSE}
+y = global_diff_ln$first_diff_log_cases
+x = model.matrix(global_diff_ln$first_diff_log_cases ~. , data = global_diff_ln)[,-1]
+lambda_grid = 10^seq(2,-2,length=100)
+n = nrow(x)
+model.global = cv.glmnet(x, y, family='gaussian', alpha=0, lambda=lambda_grid, nfolds = n)
+coef(model.global, s = "lambda.min")
+pred.global = predict(model.global, newx = x, s = "lambda.min")
+Rsq = R2(y, pred.global)
+Adj_R2(Rsq,n,2)
+RMSE(y, pred.global)
+#adding countries back into dataset
+global_diff_ln$country = countries_100_sample$country
+```
+```{r global plot cases, echo=FALSE,warning=FALSE, fig.align='center', fig.width=10, fig.asp=.5}
+ggplot(global_diff_ln, aes(x=time, y=first_diff_log_cases)) +
+  geom_point(aes(color=country),size = 0.5) +
+  geom_line(aes(y = (pred.global)), size = 0.5) +
+  scale_fill_manual(values = mycolors) +
+  scale_x_continuous(limits = c(0, 90)) +
+  scale_y_continuous(limits = c(0, 1)) +
+  ggtitle("Global Cases") +
+  xlab("Days from first 100 confirmed cases") + 
+  ylab("First difference ln(cumulative cases)") +
+  theme(plot.title = element_text(size=16, face="bold", hjust=0.5),legend.position="bottom",legend.title = element_blank()) 
+```
+
+### Canada 
+
+```{r canada ridge cases, warning=FALSE, message=FALSE, include=FALSE}
+y = canada_diff_ln$first_diff_log_cases
+x = model.matrix(canada_diff_ln$first_diff_log_cases ~. , data = canada_diff_ln)[,-1]
+lambda_grid = 10^seq(2,-2,length=100)
+n = nrow(x)
+model.canada = cv.glmnet(x, y, family='gaussian', alpha=0, lambda=lambda_grid, nfolds = n)
+coef(model.canada, s = "lambda.min")
+pred.canada = predict(model.canada, newx = x, s = "lambda.min")
+Rsq = R2(y, pred.canada)
+Adj_R2(Rsq,n,2)
+RMSE(y, pred.canada)
+
+ML.plot.canada <- ggplot(canada_diff_ln, aes(x=time, y=first_diff_log_cases)) +
+  geom_point(size = 0.5) +
+  geom_line(aes(y = (pred.canada)), size = 0.5) +
+  scale_x_continuous(limits = c(0, 90)) +
+  scale_y_continuous(limits = c(0, 1)) +  
+  ggtitle("Canada Cases") +
+  xlab("Days from first 100 confirmed cases") + 
+  ylab("First difference ln(cumulative cases)") +
+  theme(plot.title = element_text(size=16, face="bold", hjust=0.5),legend.position="bottom",legend.title = element_blank()) +
+  scale_color_brewer(palette="Paired")
+```
+```{r canada plot cases, echo=FALSE,warning=FALSE, fig.align='center', fig.width=10, fig.asp=.5}
+ML.plot.canada
+```
+
+### China (excluding Hubei) {.tabset}
+
+```{r china ridge cases, warning=FALSE, include=FALSE}
+y = china_nohubei_diff_ln$first_diff_log_cases
+x = model.matrix(china_nohubei_diff_ln$first_diff_log_cases ~. , data = china_nohubei_diff_ln)[,-1]
+lambda_grid = 10^seq(2,-2,length=100)
+n = nrow(x)
+model.china_nohubei = cv.glmnet(x, y, family='gaussian', alpha=0, lambda=lambda_grid, nfolds = n)
+coef(model.china_nohubei, s = "lambda.min")
+pred.china_nohubei = predict(model.china_nohubei, newx = x, s = "lambda.min")
+Rsq = R2(y, pred.china_nohubei)
+Adj_R2(Rsq,n,2)
+RMSE(y, pred.china_nohubei)
+
+ML.plot.china_nohubei <- ggplot(china_nohubei_diff_ln, aes(x=time, y=first_diff_log_cases)) +
+  geom_point(size = 0.5) +
+  geom_line(aes(y = (pred.china_nohubei)), size = 0.5) +
+  scale_x_continuous(limits = c(0, 90)) +
+  scale_y_continuous(limits = c(0, 1)) +
+  ggtitle("China Cases (excluding Hubei)") +
+  xlab("Days from first 100 confirmed cases") + 
+  ylab("First difference ln(cumulative cases)") +
+  theme(plot.title = element_text(size=16, face="bold", hjust=0.5),legend.position="bottom",legend.title = element_blank()) +
+  scale_color_brewer(palette="Paired") 
+```
+```{r china plot cases, echo=FALSE,warning=FALSE, fig.align='center', fig.width=10, fig.asp=.5}
+ML.plot.china_nohubei
+```
+
+### France
+
+```{r france ridge cases, warning=FALSE, include=FALSE}
+y = france_diff_ln$first_diff_log_cases
+x = model.matrix(france_diff_ln$first_diff_log_cases ~. , data = france_diff_ln)[,-1]
+lambda_grid = 10^seq(2,-2,length=100)
+n = nrow(x)
+model.france = cv.glmnet(x, y, family='gaussian', alpha=0, lambda=lambda_grid, nfolds = n)
+coef(model.france, s = "lambda.min")
+pred.france = predict(model.france, newx = x, s = "lambda.min")
+Rsq = R2(y, pred.france)
+Adj_R2(Rsq,n,2)
+RMSE(y, pred.france)
+
+ML.plot.france <- ggplot(france_diff_ln, aes(x=time, y=first_diff_log_cases)) +
+  geom_point(size = 0.5) +
+  geom_line(aes(y = (pred.france)), size = 0.5) +
+  scale_x_continuous(limits = c(0, 90)) +
+  scale_y_continuous(limits = c(0, 1)) +
+  ggtitle("France Cases") +
+  xlab("Days from first 100 confirmed cases") + 
+  ylab("First difference ln(cumulative cases)") +
+  theme(plot.title = element_text(size=16, face="bold", hjust=0.5),legend.position="bottom",legend.title = element_blank()) +
+  scale_color_brewer(palette="Paired") 
+```
+```{r france plot cases, echo=FALSE,warning=FALSE,fig.align='center', fig.width=10, fig.asp=.5}
+ML.plot.france
+```
+
+### Germany
+
+```{r germany ridge cases, warning=FALSE, include=FALSE}
+y = germany_diff_ln$first_diff_log_cases
+x = model.matrix(germany_diff_ln$first_diff_log_cases ~. , data = germany_diff_ln)[,-1]
+lambda_grid = 10^seq(2,-2,length=100)
+n = nrow(x)
+model.germany = cv.glmnet(x, y, family='gaussian', alpha=0, lambda=lambda_grid, nfolds = n)
+coef(model.germany, s = "lambda.min")
+pred.germany = predict(model.germany, newx = x, s = "lambda.min")
+Rsq = R2(y, pred.germany)
+Adj_R2(Rsq,n,2)
+RMSE(y, pred.germany)
+
+ML.plot.germany <- ggplot(germany_diff_ln, aes(x=time, y=first_diff_log_cases)) +
+  geom_point(size = 0.5) +
+  geom_line(aes(y = (pred.germany)), size = 0.5) +
+  ggtitle("Germany Cases") +
+  scale_x_continuous(limits = c(0, 90)) +
+  scale_y_continuous(limits = c(0, 1)) +  
+  xlab("Days from first 100 confirmed cases") + 
+  ylab("First difference ln(cumulative cases)") +
+  theme(plot.title = element_text(size=16, face="bold", hjust=0.5),legend.position="bottom",legend.title = element_blank()) +
+  scale_color_brewer(palette="Paired") 
+```
+```{r germany plot cases, echo=FALSE, warning=FALSE,fig.align='center', fig.width=10, fig.asp=.5}
+ML.plot.germany
+```
+
+### Hubei
+
+```{r hubei ridge cases, warning=FALSE, include=FALSE}
+y = hubei_diff_ln$first_diff_log_cases
+x = model.matrix(hubei_diff_ln$first_diff_log_cases ~. , data = hubei_diff_ln)[,-1]
+lambda_grid = 10^seq(2,-2,length=100)
+n = nrow(x)
+model.hubei = cv.glmnet(x, y, family='gaussian', alpha=0, lambda=lambda_grid, nfolds = n)
+coef(model.hubei, s = "lambda.min")
+pred.hubei = predict(model.hubei, newx = x, s = "lambda.min")
+Rsq = R2(y, pred.hubei)
+Adj_R2(Rsq,n,2)
+RMSE(y, pred.hubei)
+
+ML.plot.hubei <- ggplot(hubei_diff_ln, aes(x=time, y=first_diff_log_cases)) +
+  geom_point(size = 0.5) +
+  geom_line(aes(y = (pred.hubei)), size = 0.5) +
+  scale_x_continuous(limits = c(0, 90)) +
+  scale_y_continuous(limits = c(0, 1)) +
+  ggtitle("Hubei Cases") +
+  xlab("Days from first 10 confirmed cases") + 
+  ylab("First difference ln(cumulative cases)") +
+  theme(plot.title = element_text(size=16, face="bold", hjust=0.5),legend.position="bottom",legend.title = element_blank()) +
+  scale_color_brewer(palette="Paired") 
+```
+```{r hubei plot cases, echo=FALSE, warning=FALSE,fig.align='center', fig.width=10, fig.asp=.5}
+ML.plot.hubei
+```
+
+### Iran
+
+```{r iran ridge cases, warning=FALSE, include=FALSE}
+y = iran_diff_ln$first_diff_log_cases
+x = model.matrix(iran_diff_ln$first_diff_log_cases ~. , data = iran_diff_ln)[,-1]
+lambda_grid = 10^seq(2,-2,length=100)
+n = nrow(x)
+model.iran = cv.glmnet(x, y, family='gaussian', alpha=0, lambda=lambda_grid, nfolds = n)
+coef(model.iran, s = "lambda.min")
+pred.iran = predict(model.iran, newx = x, s = "lambda.min")
+Rsq = R2(y, pred.iran)
+Adj_R2(Rsq,n,2)
+RMSE(y, pred.iran)
+
+ML.plot.iran <- ggplot(iran_diff_ln, aes(x=time, y=first_diff_log_cases)) +
+  geom_point(size = 0.5) +
+  geom_line(aes(y = (pred.iran)), size = 0.5) +
+  scale_x_continuous(limits = c(0, 90)) +
+  scale_y_continuous(limits = c(0, 1)) +
+  ggtitle("Iran Cases") +
+  xlab("Days from first 100 confirmed cases") + 
+  ylab("First difference ln(cumulative cases)") +
+  theme(plot.title = element_text(size=16, face="bold", hjust=0.5),legend.position="bottom",legend.title = element_blank()) +
+  scale_color_brewer(palette="Paired") 
+```
+```{r iran plot cases, echo=FALSE,warning=FALSE, fig.align='center', fig.width=10, fig.asp=.5}
+ML.plot.iran
+```
+
+### Italy
+
+```{r italy ridge cases, warning=FALSE, include=FALSE}
+y = italy_diff_ln$first_diff_log_cases
+x = model.matrix(italy_diff_ln$first_diff_log_cases ~. , data = italy_diff_ln)[,-1]
+lambda_grid = 10^seq(2,-2,length=100)
+n = nrow(x)
+model.italy = cv.glmnet(x, y, family='gaussian', alpha=0, lambda=lambda_grid, nfolds = n)
+coef(model.italy, s = "lambda.min")
+pred.italy = predict(model.italy, newx = x, s = "lambda.min")
+Rsq = R2(y, pred.italy)
+Adj_R2(Rsq,n,2)
+RMSE(y, pred.italy)
+
+ML.plot.italy <- ggplot(italy_diff_ln, aes(x=time, y=first_diff_log_cases)) +
+  geom_point(size = 0.5) +
+  geom_line(aes(y = (pred.italy)), size = 0.5) +
+  scale_x_continuous(limits = c(0, 90)) +
+  scale_y_continuous(limits = c(0, 1)) +
+  ggtitle("Italy Cases") +
+  xlab("Days from first 100 confirmed cases") + 
+  ylab("First difference ln(cumulative cases)") +
+  theme(plot.title = element_text(size=16, face="bold", hjust=0.5),legend.position="bottom",legend.title = element_blank()) +
+  scale_color_brewer(palette="Paired") 
+```
+```{r italy plot cases, echo=FALSE,warning=FALSE, fig.align='center', fig.width=10, fig.asp=.5}
+ML.plot.italy
+```
+
+### Japan 
+
+```{r japan ridge cases, warning=FALSE, include=FALSE}
+y = japan_diff_ln$first_diff_log_cases
+x = model.matrix(japan_diff_ln$first_diff_log_cases ~. , data = japan_diff_ln)[,-1]
+lambda_grid = 10^seq(2,-2,length=100)
+n = nrow(x)
+model.japan = cv.glmnet(x, y, family='gaussian', alpha=0, lambda=lambda_grid, nfolds = n)
+coef(model.japan, s = "lambda.min")
+pred.japan = predict(model.japan, newx = x, s = "lambda.min")
+Rsq = R2(y, pred.japan)
+Adj_R2(Rsq,n,2)
+RMSE(y, pred.japan)
+
+ML.plot.japan <- ggplot(japan_diff_ln, aes(x=time, y=first_diff_log_cases)) +
+  geom_point(size = 0.5) +
+  geom_line(aes(y = (pred.japan)), size = 0.5) +
+  scale_x_continuous(limits = c(0, 90)) +
+  scale_y_continuous(limits = c(0, 1)) +
+  ggtitle("Japan Cases") +
+  xlab("Days from first 100 confirmed cases") + 
+  ylab("First difference ln(cumulative cases)") +
+  theme(plot.title = element_text(size=16, face="bold", hjust=0.5),legend.position="bottom",legend.title = element_blank()) +
+  scale_color_brewer(palette="Paired") 
+```
+```{r japan plot cases, echo=FALSE,warning=FALSE, fig.align='center', fig.width=10, fig.asp=.5}
+ML.plot.japan
+```
+
+### South Korea
+
+```{r south korea ridge cases, warning=FALSE, include=FALSE}
+y = korea_diff_ln$first_diff_log_cases
+x = model.matrix(korea_diff_ln$first_diff_log_cases ~. , data = korea_diff_ln)[,-1]
+lambda_grid = 10^seq(2,-2,length=100)
+n = nrow(x)
+model.korea = cv.glmnet(x, y, family='gaussian', alpha=0, lambda=lambda_grid, nfolds = n)
+coef(model.korea, s = "lambda.min")
+pred.korea = predict(model.korea, newx = x, s = "lambda.min")
+Rsq = R2(y, pred.korea)
+Adj_R2(Rsq,n,2)
+RMSE(y, pred.korea)
+
+ML.plot.korea <- ggplot(korea_diff_ln, aes(x=time, y=first_diff_log_cases)) +
+  geom_point(size = 0.5) +
+  geom_line(aes(y = (pred.korea)), size = 0.5) +
+  scale_x_continuous(limits = c(0, 90)) +
+  scale_y_continuous(limits = c(0, 1)) +
+  ggtitle("South Korea Cases") +
+  xlab("Days from first 100 confirmed cases") + 
+  ylab("First difference ln(cumulative cases)") +
+  theme(plot.title = element_text(size=16, face="bold", hjust=0.5),legend.position="bottom",legend.title = element_blank()) +
+  scale_color_brewer(palette="Paired") 
+```
+```{r south korea plot cases, echo=FALSE, warning=FALSE,fig.align='center', fig.width=10, fig.asp=.5}
+ML.plot.korea
+```
+
+### Netherlands
+
+```{r netherlands ridge cases, warning=FALSE, message=FALSE, include=FALSE}
+y = netherlands_diff_ln$first_diff_log_cases
+x = model.matrix(netherlands_diff_ln$first_diff_log_cases ~. , data = netherlands_diff_ln)[,-1]
+lambda_grid = 10^seq(2,-2,length=100)
+n = nrow(x)
+model.netherlands = cv.glmnet(x, y, family='gaussian', alpha=0, lambda=lambda_grid, nfolds = n)
+coef(model.netherlands, s = "lambda.min")
+pred.netherlands = predict(model.netherlands, newx = x, s = "lambda.min")
+Rsq = R2(y, pred.netherlands)
+Adj_R2(Rsq,n,2)
+RMSE(y, pred.netherlands)
+
+ML.plot.netherlands <- ggplot(netherlands_diff_ln, aes(x=time, y=first_diff_log_cases)) +
+  geom_point(size = 0.5) +
+  geom_line(aes(y = (pred.netherlands)), size = 0.5) +
+  scale_x_continuous(limits = c(0, 90)) +
+  scale_y_continuous(limits = c(0, 1)) +
+  ggtitle("Netherlands Cases") +
+  xlab("Days from first 100 confirmed cases") + 
+  ylab("First difference ln(cumulative cases)") +
+  theme(plot.title = element_text(size=16, face="bold", hjust=0.5),legend.position="bottom",legend.title = element_blank()) +
+  scale_color_brewer(palette="Paired")
+```
+```{r netherlands plot cases, echo=FALSE, warning=FALSE,fig.align='center', fig.width=10, fig.asp=.5}
+ML.plot.netherlands
+```
+
+### Norway
+
+```{r norway ridge cases,warning=FALSE, message=FALSE, include=FALSE}
+y = norway_diff_ln$first_diff_log_cases
+x = model.matrix(norway_diff_ln$first_diff_log_cases ~. , data = norway_diff_ln)[,-1]
+lambda_grid = 10^seq(2,-2,length=100)
+n = nrow(x)
+model.norway = cv.glmnet(x, y, family='gaussian', alpha=0, lambda=lambda_grid, nfolds = n)
+coef(model.norway, s = "lambda.min")
+pred.norway = predict(model.norway, newx = x, s = "lambda.min")
+Rsq = R2(y, pred.norway)
+Adj_R2(Rsq,n,2)
+RMSE(y, pred.norway)
+
+ML.plot.norway <- ggplot(norway_diff_ln, aes(x=time, y=first_diff_log_cases)) +
+  geom_point(size = 0.5) +
+  geom_line(aes(y = (pred.norway)), size = 0.5) +
+  scale_x_continuous(limits = c(0, 90)) +
+  scale_y_continuous(limits = c(0, 1)) +
+  ggtitle("Norway Cases") +
+  xlab("Days from first 100 confirmed cases") + 
+  ylab("First difference ln(cumulative cases)") +
+  theme(plot.title = element_text(size=16, face="bold", hjust=0.5),legend.position="bottom",legend.title = element_blank()) +
+  scale_color_brewer(palette="Paired")
+```
+```{r norway plot cases, echo=FALSE, warning=FALSE,fig.align='center', fig.width=10, fig.asp=.5}
+ML.plot.norway
+```
+
+### Spain
+
+```{r spain ridge cases, warning=FALSE, include=FALSE}
+y = spain_diff_ln$first_diff_log_cases
+x = model.matrix(spain_diff_ln$first_diff_log_cases ~. , data = spain_diff_ln)[,-1]
+lambda_grid = 10^seq(2,-2,length=100)
+n = nrow(x)
+model.spain = cv.glmnet(x, y, family='gaussian', alpha=0, lambda=lambda_grid, nfolds = n)
+coef(model.spain, s = "lambda.min")
+pred.spain = predict(model.spain, newx = x, s = "lambda.min")
+Rsq = R2(y, pred.spain)
+Adj_R2(Rsq,n,2)
+RMSE(y, pred.spain)
+
+ML.plot.spain <- ggplot(spain_diff_ln, aes(x=time, y=first_diff_log_cases)) +
+  geom_point(size = 0.5) +
+  geom_line(aes(y = (pred.spain)), size = 0.5) +
+  scale_x_continuous(limits = c(0, 90)) +
+  scale_y_continuous(limits = c(0, 1)) +
+  ggtitle("Spain Cases") +
+  xlab("Days from first 100 confirmed cases") + 
+  ylab("First difference ln(cumulative cases)") +
+  theme(plot.title = element_text(size=16, face="bold", hjust=0.5),legend.position="bottom",legend.title = element_blank()) +
+  scale_color_brewer(palette="Paired") 
+```
+```{r spain plot cases, echo=FALSE,warning=FALSE, fig.align='center', fig.width=10, fig.asp=.5}
+ML.plot.spain
+```
+
+### Sweden 
+
+```{r sweden ridge cases, warning=FALSE, message=FALSE, include=FALSE}
+y = sweden_diff_ln$first_diff_log_cases
+x = model.matrix(sweden_diff_ln$first_diff_log_cases ~. , data = sweden_diff_ln)[,-1]
+lambda_grid = 10^seq(2,-2,length=100)
+n = nrow(x)
+model.sweden = cv.glmnet(x, y, family='gaussian', alpha=0, lambda=lambda_grid, nfolds = n)
+coef(model.sweden, s = "lambda.min")
+pred.sweden = predict(model.sweden, newx = x, s = "lambda.min")
+Rsq = R2(y, pred.sweden)
+Adj_R2(Rsq,n,2)
+RMSE(y, pred.sweden)
+
+ML.plot.sweden <- ggplot(sweden_diff_ln, aes(x=time, y=first_diff_log_cases)) +
+  geom_point(size = 0.5) +
+  geom_line(aes(y = (pred.sweden)), size = 0.5) +
+  scale_x_continuous(limits = c(0, 90)) +
+  scale_y_continuous(limits = c(0, 1)) +
+  ggtitle("Sweden Cases") +
+  xlab("Days from first 100 confirmed cases") + 
+  ylab("First difference ln(cumulative cases)") +
+  theme(plot.title = element_text(size=16, face="bold", hjust=0.5),legend.position="bottom",legend.title = element_blank()) +
+  scale_color_brewer(palette="Paired")
+```
+```{r sweden plot cases, echo=FALSE, warning=FALSE,fig.align='center', fig.width=10, fig.asp=.5}
+ML.plot.sweden
+```
+
+### Switzerland 
+
+```{r switzerland ridge cases, warning=FALSE, message=FALSE, include=FALSE}
+y = switzerland_diff_ln$first_diff_log_cases
+x = model.matrix(switzerland_diff_ln$first_diff_log_cases ~. , data = switzerland_diff_ln)[,-1]
+lambda_grid = 10^seq(2,-2,length=100)
+n = nrow(x)
+model.switzerland = cv.glmnet(x, y, family='gaussian', alpha=0, lambda=lambda_grid, nfolds = n)
+coef(model.switzerland, s = "lambda.min")
+pred.switzerland = predict(model.switzerland, newx = x, s = "lambda.min")
+Rsq = R2(y, pred.switzerland)
+Adj_R2(Rsq,n,2)
+RMSE(y, pred.switzerland)
+
+ML.plot.switzerland <- ggplot(switzerland_diff_ln, aes(x=time, y=first_diff_log_cases)) +
+  geom_point(size = 0.5) +
+  geom_line(aes(y = (pred.switzerland)), size = 0.5) +
+  scale_x_continuous(limits = c(0, 90)) +
+  scale_y_continuous(limits = c(0, 1)) +
+  ggtitle("Switzerland Cases") +
+  xlab("Days from first 100 confirmed cases") + 
+  ylab("First difference ln(cumulative cases)") +
+  theme(plot.title = element_text(size=16, face="bold", hjust=0.5),legend.position="bottom",legend.title = element_blank()) +
+  scale_color_brewer(palette="Paired")
+```
+```{r switzerland plot cases, echo=FALSE,warning=FALSE, fig.align='center', fig.width=10, fig.asp=.5}
+ML.plot.switzerland
+```
+
+### United Kingdom 
+
+```{r uk ridge cases, warning=FALSE, message=FALSE, include=FALSE}
+y = uk_diff_ln$first_diff_log_cases
+x = model.matrix(uk_diff_ln$first_diff_log_cases ~. , data = uk_diff_ln)[,-1]
+lambda_grid = 10^seq(2,-2,length=100)
+n = nrow(x)
+model.uk = cv.glmnet(x, y, family='gaussian', alpha=0, lambda=lambda_grid, nfolds = n)
+coef(model.uk, s = "lambda.min")
+pred.uk = predict(model.uk, newx = x, s = "lambda.min")
+Rsq = R2(y, pred.uk)
+Adj_R2(Rsq,n,2)
+RMSE(y, pred.uk)
+
+ML.plot.uk <- ggplot(uk_diff_ln, aes(x=time, y=first_diff_log_cases)) +
+  geom_point(size = 0.5) +
+  geom_line(aes(y = (pred.uk)), size = 0.5) +
+  scale_x_continuous(limits = c(0, 90)) +
+  scale_y_continuous(limits = c(0, 1)) +
+  ggtitle("United Kingdom Cases") +
+  xlab("Days from first 100 confirmed cases") + 
+  ylab("First difference ln(cumulative cases)") +
+  theme(plot.title = element_text(size=16, face="bold", hjust=0.5),legend.position="bottom",legend.title = element_blank()) +
+  scale_color_brewer(palette="Paired")
+```
+```{r uk plot cases, echo=FALSE,warning=FALSE, fig.align='center', fig.width=10, fig.asp=.5}
+ML.plot.uk
+```
+
+### United States 
+
+```{r us ridge cases, warning=FALSE, include=FALSE}
+y = us_diff_ln$first_diff_log_cases
+x = model.matrix(us_diff_ln$first_diff_log_cases ~. , data = us_diff_ln)[,-1]
+lambda_grid = 10^seq(2,-2,length=100)
+n = nrow(x)
+model.us = cv.glmnet(x, y, family='gaussian', alpha=0, lambda=lambda_grid, nfolds = n)
+coef(model.us, s = "lambda.min")
+pred.us = predict(model.us, newx = x, s = "lambda.min")
+Rsq = R2(y, pred.us)
+Adj_R2(Rsq,n,2)
+RMSE(y, pred.us)
+
+ML.plot.us <- ggplot(us_diff_ln, aes(x=time, y=first_diff_log_cases)) +
+  geom_point(size = 0.5) +
+  geom_line(aes(y = (pred.us)), size = 0.5) +
+  scale_x_continuous(limits = c(0, 90)) +
+  scale_y_continuous(limits = c(0, 1)) +
+  ggtitle("United States Cases") +
+  xlab("Days from first 100 confirmed cases") + 
+  ylab("First difference ln(cumulative cases)") +
+  theme(plot.title = element_text(size=16, face="bold", hjust=0.5),legend.position="bottom",legend.title = element_blank()) +
+  scale_color_brewer(palette="Paired") 
+```
+```{r us plot cases, echo=FALSE,warning=FALSE, fig.align='center', fig.width=10, fig.asp=.5}
+ML.plot.us
+```
+
+## {-}
+
+## Deaths {.tabset}
+
+### Global 
+
+```{r global ridge deaths, warning=FALSE, include=FALSE}
+y = deaths.global_diff_ln$first_diff_log_deaths
+x = model.matrix(deaths.global_diff_ln$first_diff_log_deaths ~. , data = deaths.global_diff_ln)[,-1]
+lambda_grid = 10^seq(2,-2,length=100)
+n = nrow(x)
+model.global = cv.glmnet(x, y, family='gaussian', alpha=0, lambda=lambda_grid, nfolds = n)
+coef(model.global, s = "lambda.min")
+pred.global = predict(model.global, newx = x, s = "lambda.min")
+Rsq = R2(y, pred.global)
+Adj_R2(Rsq,n,2)
+RMSE(y, pred.global)
+#adding countries back into dataset
+deaths.global_diff_ln$country = deaths.countries_10_sample$country
+```
+```{r global plot deaths,warning=FALSE, echo=FALSE, fig.align='center', fig.width=10, fig.asp=.5}
+ggplot(deaths.global_diff_ln, aes(x=time, y=first_diff_log_deaths)) +
+  geom_point(aes(color=country),size = 0.5) +
+  geom_line(aes(y = (pred.global)), size = 0.5) +
+  scale_fill_manual(values = mycolors) +
+  scale_x_continuous(limits = c(0, 90)) +
+  scale_y_continuous(limits = c(0, 1)) +
+  ggtitle("Global Deaths") +
+  xlab("Days from first 10 confirmed deaths") + 
+  ylab("First difference ln(cumulative deaths)") +
+  theme(plot.title = element_text(size=16, face="bold", hjust=0.5),legend.position="bottom",legend.title = element_blank()) 
+```
+
+### Canada 
+
+```{r canada ridge deaths, warning=FALSE, message=FALSE, include=FALSE}
+y = deaths.canada_diff_ln$first_diff_log_deaths
+x = model.matrix(deaths.canada_diff_ln$first_diff_log_deaths ~. , data = deaths.canada_diff_ln)[,-1]
+lambda_grid = 10^seq(2,-2,length=100)
+n = nrow(x)
+model.canada = cv.glmnet(x, y, family='gaussian', alpha=0, lambda=lambda_grid, nfolds = n)
+coef(model.canada, s = "lambda.min")
+pred.canada = predict(model.canada, newx = x, s = "lambda.min")
+Rsq = R2(y, pred.canada)
+Adj_R2(Rsq,n,2)
+RMSE(y, pred.canada)
+
+ML.plot.canada <- ggplot(deaths.canada_diff_ln, aes(x=time, y=first_diff_log_deaths)) +
+  geom_point(size = 0.5) +
+  geom_line(aes(y = (pred.canada)), size = 0.5) +
+  scale_x_continuous(limits = c(0, 90)) +
+  scale_y_continuous(limits = c(0, 1)) +
+  ggtitle("Canada Deaths") +
+  xlab("Days from first 10 confirmed deaths") + 
+  ylab("First difference ln(cumulative deaths)") +
+  theme(plot.title = element_text(size=16, face="bold", hjust=0.5),legend.position="bottom",legend.title = element_blank()) +
+  scale_color_brewer(palette="Paired")
+```
+```{r canada plot deaths, warning=FALSE,echo=FALSE, fig.align='center', fig.width=10, fig.asp=.5}
+ML.plot.canada
+```
+
+### China (excluding Hubei) 
+
+```{r china ridge deaths, warning=FALSE, include=FALSE}
+y = deaths.china_nohubei_diff_ln$first_diff_log_deaths
+x = model.matrix(deaths.china_nohubei_diff_ln$first_diff_log_deaths ~. , data = deaths.china_nohubei_diff_ln)[,-1]
+lambda_grid = 10^seq(2,-2,length=100)
+n = nrow(x)
+model.china_nohubei = cv.glmnet(x, y, family='gaussian', alpha=0, lambda=lambda_grid, nfolds = n)
+coef(model.china_nohubei, s = "lambda.min")
+pred.china_nohubei = predict(model.china_nohubei, newx = x, s = "lambda.min")
+Rsq = R2(y, pred.china_nohubei)
+Adj_R2(Rsq,n,2)
+RMSE(y, pred.china_nohubei)
+
+ML.plot.china_nohubei <- ggplot(deaths.china_nohubei_diff_ln, aes(x=time, y=first_diff_log_deaths)) +
+  geom_point(size = 0.5) +
+  geom_line(aes(y = (pred.china_nohubei)), size = 0.5) +
+  scale_x_continuous(limits = c(0, 90)) +
+  scale_y_continuous(limits = c(0, 1)) +
+  ggtitle("China Deaths (excluding Hubei)") +
+  xlab("Days from first 10 confirmed deaths") + 
+  ylab("First difference ln(cumulative deaths)") +
+  theme(plot.title = element_text(size=16, face="bold", hjust=0.5),legend.position="bottom",legend.title = element_blank()) +
+  scale_color_brewer(palette="Paired") 
+```
+```{r china plot deaths, warning=FALSE,echo=FALSE, fig.align='center', fig.width=10, fig.asp=.5}
+ML.plot.china_nohubei
+```
+
+### France 
+
+```{r france ridge deaths, warning=FALSE, include=FALSE}
+y = deaths.france_diff_ln$first_diff_log_deaths
+x = model.matrix(deaths.france_diff_ln$first_diff_log_deaths ~. , data = deaths.france_diff_ln)[,-1]
+lambda_grid = 10^seq(2,-2,length=100)
+n = nrow(x)
+model.france = cv.glmnet(x, y, family='gaussian', alpha=0, lambda=lambda_grid, nfolds = n)
+coef(model.france, s = "lambda.min")
+pred.france = predict(model.france, newx = x, s = "lambda.min")
+Rsq = R2(y, pred.france)
+Adj_R2(Rsq,n,2)
+RMSE(y, pred.france)
+
+ML.plot.france <- ggplot(deaths.france_diff_ln, aes(x=time, y=first_diff_log_deaths)) +
+  geom_point(size = 0.5) +
+  geom_line(aes(y = (pred.france)), size = 0.5) +
+  scale_x_continuous(limits = c(0, 90)) +
+  scale_y_continuous(limits = c(0, 1)) +
+  ggtitle("France Deaths") +
+  xlab("Days from first 10 confirmed deaths") + 
+  ylab("First difference ln(cumulative deaths)") +
+  theme(plot.title = element_text(size=16, face="bold", hjust=0.5),legend.position="bottom",legend.title = element_blank()) +
+  scale_color_brewer(palette="Paired") 
+```
+```{r france plot deaths, warning=FALSE,echo=FALSE, fig.align='center', fig.width=10, fig.asp=.5}
+ML.plot.france
+```
+
+### Germany 
+
+```{r germany ridge deaths, warning=FALSE, include=FALSE}
+y = deaths.germany_diff_ln$first_diff_log_deaths
+x = model.matrix(deaths.germany_diff_ln$first_diff_log_deaths ~. , data = deaths.germany_diff_ln)[,-1]
+lambda_grid = 10^seq(2,-2,length=100)
+n = nrow(x)
+model.germany = cv.glmnet(x, y, family='gaussian', alpha=0, lambda=lambda_grid, nfolds = n)
+coef(model.germany, s = "lambda.min")
+pred.germany = predict(model.germany, newx = x, s = "lambda.min")
+Rsq = R2(y, pred.germany)
+Adj_R2(Rsq,n,2)
+RMSE(y, pred.germany)
+
+ML.plot.germany <- ggplot(deaths.germany_diff_ln, aes(x=time, y=first_diff_log_deaths)) +
+  geom_point(size = 0.5) +
+  geom_line(aes(y = (pred.germany)), size = 0.5) +
+  scale_x_continuous(limits = c(0, 90)) +
+  scale_y_continuous(limits = c(0, 1)) +
+  ggtitle("Germany Deaths") +
+  xlab("Days from first 10 confirmed deaths") + 
+  ylab("First difference ln(cumulative deaths)") +
+  theme(plot.title = element_text(size=16, face="bold", hjust=0.5),legend.position="bottom",legend.title = element_blank()) +
+  scale_color_brewer(palette="Paired") 
+```
+```{r germany plot deaths, warning=FALSE,echo=FALSE, fig.align='center', fig.width=10, fig.asp=.5}
+ML.plot.germany
+```
+
+### Hubei 
+
+```{r hubei ridge deaths, warning=FALSE, include=FALSE}
+y = deaths.hubei_diff_ln$first_diff_log_deaths
+x = model.matrix(deaths.hubei_diff_ln$first_diff_log_deaths ~. , data = deaths.hubei_diff_ln)[,-1]
+lambda_grid = 10^seq(2,-2,length=100)
+n = nrow(x)
+model.hubei = cv.glmnet(x, y, family='gaussian', alpha=0, lambda=lambda_grid, nfolds = n)
+coef(model.hubei, s = "lambda.min")
+pred.hubei = predict(model.hubei, newx = x, s = "lambda.min")
+Rsq = R2(y, pred.hubei)
+Adj_R2(Rsq,n,2)
+RMSE(y, pred.hubei)
+
+ML.plot.hubei <- ggplot(deaths.hubei_diff_ln, aes(x=time, y=first_diff_log_deaths)) +
+  geom_point(size = 0.5) +
+  geom_line(aes(y = (pred.hubei)), size = 0.5) +
+  scale_x_continuous(limits = c(0, 90)) +
+  scale_y_continuous(limits = c(0, 1)) +
+  ggtitle("Hubei Deaths") +
+  xlab("Days from first 10 confirmed deaths") + 
+  ylab("First difference ln(cumulative deaths)") +
+  theme(plot.title = element_text(size=16, face="bold", hjust=0.5),legend.position="bottom",legend.title = element_blank()) +
+  scale_color_brewer(palette="Paired") 
+```
+```{r hubei plot deaths,warning=FALSE, echo=FALSE, fig.align='center', fig.width=10, fig.asp=.5}
+ML.plot.hubei
+```
+
+### Iran
+
+```{r iran ridge deaths, warning=FALSE, include=FALSE}
+y = deaths.iran_diff_ln$first_diff_log_deaths
+x = model.matrix(deaths.iran_diff_ln$first_diff_log_deaths ~. , data = deaths.iran_diff_ln)[,-1]
+lambda_grid = 10^seq(2,-2,length=100)
+n = nrow(x)
+model.iran = cv.glmnet(x, y, family='gaussian', alpha=0, lambda=lambda_grid, nfolds = n)
+coef(model.iran, s = "lambda.min")
+pred.iran = predict(model.iran, newx = x, s = "lambda.min")
+Rsq = R2(y, pred.iran)
+Adj_R2(Rsq,n,2)
+RMSE(y, pred.iran)
+
+ML.plot.iran <- ggplot(deaths.iran_diff_ln, aes(x=time, y=first_diff_log_deaths)) +
+  geom_point(size = 0.5) +
+  geom_line(aes(y = (pred.iran)), size = 0.5) +
+  scale_x_continuous(limits = c(0, 90)) +
+  scale_y_continuous(limits = c(0, 1)) +
+  ggtitle("Iran Deaths") +
+  xlab("Days from first 10 confirmed deaths") + 
+  ylab("First difference ln(cumulative deaths)") +
+  theme(plot.title = element_text(size=16, face="bold", hjust=0.5),legend.position="bottom",legend.title = element_blank()) +
+  scale_color_brewer(palette="Paired") 
+```
+```{r iran plot deaths, warning=FALSE,echo=FALSE, fig.align='center', fig.width=10, fig.asp=.5}
+ML.plot.iran
+```
+
+### Italy {.tabset}
+
+```{r italy ridge deaths, warning=FALSE, include=FALSE}
+y = deaths.italy_diff_ln$first_diff_log_deaths
+x = model.matrix(deaths.italy_diff_ln$first_diff_log_deaths ~. , data = deaths.italy_diff_ln)[,-1]
+lambda_grid = 10^seq(2,-2,length=100)
+n = nrow(x)
+model.italy = cv.glmnet(x, y, family='gaussian', alpha=0, lambda=lambda_grid, nfolds = n)
+coef(model.italy, s = "lambda.min")
+pred.italy = predict(model.italy, newx = x, s = "lambda.min")
+Rsq = R2(y, pred.italy)
+Adj_R2(Rsq,n,2)
+RMSE(y, pred.italy)
+
+ML.plot.italy <- ggplot(deaths.italy_diff_ln, aes(x=time, y=first_diff_log_deaths)) +
+  geom_point(size = 0.5) +
+  geom_line(aes(y = (pred.italy)), size = 0.5) +
+  scale_x_continuous(limits = c(0, 90)) +
+  scale_y_continuous(limits = c(0, 1)) +
+  ggtitle("Italy Deaths") +
+  xlab("Days from first 10 confirmed deaths") + 
+  ylab("First difference ln(cumulative deaths)") +
+  theme(plot.title = element_text(size=16, face="bold", hjust=0.5),legend.position="bottom",legend.title = element_blank()) +
+  scale_color_brewer(palette="Paired") 
+```
+```{r italy plot deaths, warning=FALSE,echo=FALSE, fig.align='center', fig.width=10, fig.asp=.5}
+ML.plot.italy
+```
+
+### Japan
+
+```{r japan ridge deaths, warning=FALSE, include=FALSE}
+y = deaths.japan_diff_ln$first_diff_log_deaths
+x = model.matrix(deaths.japan_diff_ln$first_diff_log_deaths ~. , data = deaths.japan_diff_ln)[,-1]
+lambda_grid = 10^seq(2,-2,length=100)
+n = nrow(x)
+model.japan = cv.glmnet(x, y, family='gaussian', alpha=0, lambda=lambda_grid, nfolds = n)
+coef(model.japan, s = "lambda.min")
+pred.japan = predict(model.japan, newx = x, s = "lambda.min")
+Rsq = R2(y, pred.japan)
+Adj_R2(Rsq,n,2)
+RMSE(y, pred.japan)
+
+ML.plot.japan <- ggplot(deaths.japan_diff_ln, aes(x=time, y=first_diff_log_deaths)) +
+  geom_point(size = 0.5) +
+  geom_line(aes(y = (pred.japan)), size = 0.5) +
+  scale_x_continuous(limits = c(0, 90)) +
+  scale_y_continuous(limits = c(0, 1)) +
+  ggtitle("Japan Deaths") +
+  xlab("Days from first 10 confirmed deaths") + 
+  ylab("First difference ln(cumulative deaths)") +
+  theme(plot.title = element_text(size=16, face="bold", hjust=0.5),legend.position="bottom",legend.title = element_blank()) +
+  scale_color_brewer(palette="Paired") 
+```
+```{r japan plot deaths, warning=FALSE,echo=FALSE, fig.align='center', fig.width=10, fig.asp=.5}
+ML.plot.japan
+```
+
+### South Korea
+
+```{r south korea ridge deaths, warning=FALSE, include=FALSE}
+y = deaths.korea_diff_ln$first_diff_log_deaths
+x = model.matrix(deaths.korea_diff_ln$first_diff_log_deaths ~. , data = deaths.korea_diff_ln)[,-1]
+lambda_grid = 10^seq(2,-2,length=100)
+n = nrow(x)
+model.korea = cv.glmnet(x, y, family='gaussian', alpha=0, lambda=lambda_grid, nfolds = n)
+coef(model.korea, s = "lambda.min")
+pred.korea = predict(model.korea, newx = x, s = "lambda.min")
+Rsq = R2(y, pred.korea)
+Adj_R2(Rsq,n,2)
+RMSE(y, pred.korea)
+
+ML.plot.korea <- ggplot(deaths.korea_diff_ln, aes(x=time, y=first_diff_log_deaths)) +
+  geom_point(size = 0.5) +
+  geom_line(aes(y = (pred.korea)), size = 0.5) +
+  scale_x_continuous(limits = c(0, 90)) +
+  scale_y_continuous(limits = c(0, 1)) +
+  ggtitle("South Korea Deaths") +
+  xlab("Days from first 10 confirmed deaths") + 
+  ylab("First difference ln(cumulative deaths)") +
+  theme(plot.title = element_text(size=16, face="bold", hjust=0.5),legend.position="bottom",legend.title = element_blank()) +
+  scale_color_brewer(palette="Paired") 
+```
+```{r south korea plot deaths,warning=FALSE, echo=FALSE, fig.align='center', fig.width=10, fig.asp=.5}
+ML.plot.korea
+```
+
+### Netherlands
+
+```{r netherlands ridge deaths, warning=FALSE, message=FALSE, include=FALSE}
+y = deaths.netherlands_diff_ln$first_diff_log_deaths
+x = model.matrix(deaths.netherlands_diff_ln$first_diff_log_deaths ~. , data = deaths.netherlands_diff_ln)[,-1]
+lambda_grid = 10^seq(2,-2,length=100)
+n = nrow(x)
+model.netherlands = cv.glmnet(x, y, family='gaussian', alpha=0, lambda=lambda_grid, nfolds = n)
+coef(model.netherlands, s = "lambda.min")
+pred.netherlands = predict(model.netherlands, newx = x, s = "lambda.min")
+Rsq = R2(y, pred.netherlands)
+Adj_R2(Rsq,n,2)
+RMSE(y, pred.netherlands)
+
+ML.plot.netherlands <- ggplot(deaths.netherlands_diff_ln, aes(x=time, y=first_diff_log_deaths)) +
+  geom_point(size = 0.5) +
+  geom_line(aes(y = (pred.netherlands)), size = 0.5) +
+  scale_x_continuous(limits = c(0, 90)) +
+  scale_y_continuous(limits = c(0, 1)) +
+  ggtitle("Netherlands Deaths") +
+  xlab("Days from first 10 confirmed deaths") + 
+  ylab("First difference ln(cumulative deaths)") +
+  theme(plot.title = element_text(size=16, face="bold", hjust=0.5),legend.position="bottom",legend.title = element_blank()) +
+  scale_color_brewer(palette="Paired")
+```
+```{r netherlands plot deaths,warning=FALSE, echo=FALSE, fig.align='center', fig.width=10, fig.asp=.5}
+ML.plot.netherlands
+```
+
+### Norway
+
+```{r norway ridge deaths,warning=FALSE, message=FALSE, include=FALSE}
+y = deaths.norway_diff_ln$first_diff_log_deaths
+x = model.matrix(deaths.norway_diff_ln$first_diff_log_deaths ~. , data = deaths.norway_diff_ln)[,-1]
+lambda_grid = 10^seq(2,-2,length=100)
+n = nrow(x)
+model.norway = cv.glmnet(x, y, family='gaussian', alpha=0, lambda=lambda_grid, nfolds = n)
+coef(model.norway, s = "lambda.min")
+pred.norway = predict(model.norway, newx = x, s = "lambda.min")
+Rsq = R2(y, pred.norway)
+Adj_R2(Rsq,n,2)
+RMSE(y, pred.norway)
+
+ML.plot.norway <- ggplot(deaths.norway_diff_ln, aes(x=time, y=first_diff_log_deaths)) +
+  geom_point(size = 0.5) +
+  geom_line(aes(y = (pred.norway)), size = 0.5) +
+  scale_x_continuous(limits = c(0, 90)) +
+  scale_y_continuous(limits = c(0, 1)) +
+  ggtitle("Norway Deaths") +
+  xlab("Days from first 10 confirmed deaths") + 
+  ylab("First difference ln(cumulative deaths)") +
+  theme(plot.title = element_text(size=16, face="bold", hjust=0.5),legend.position="bottom",legend.title = element_blank()) +
+  scale_color_brewer(palette="Paired")
+```
+```{r norway plot deaths, echo=FALSE,warning=FALSE, fig.align='center', fig.width=10, fig.asp=.5}
+ML.plot.norway
+```
+
+### Spain 
+
+```{r spain ridge deaths, warning=FALSE, include=FALSE}
+y = deaths.spain_diff_ln$first_diff_log_deaths
+x = model.matrix(deaths.spain_diff_ln$first_diff_log_deaths ~. , data = deaths.spain_diff_ln)[,-1]
+lambda_grid = 10^seq(2,-2,length=100)
+n = nrow(x)
+model.spain = cv.glmnet(x, y, family='gaussian', alpha=0, lambda=lambda_grid, nfolds = n)
+coef(model.spain, s = "lambda.min")
+pred.spain = predict(model.spain, newx = x, s = "lambda.min")
+Rsq = R2(y, pred.spain)
+Adj_R2(Rsq,n,2)
+RMSE(y, pred.spain)
+
+ML.plot.spain <- ggplot(deaths.spain_diff_ln, aes(x=time, y=first_diff_log_deaths)) +
+  geom_point(size = 0.5) +
+  geom_line(aes(y = (pred.spain)), size = 0.5) +
+  scale_x_continuous(limits = c(0, 90)) +
+  scale_y_continuous(limits = c(0, 1)) +
+  ggtitle("Spain Deaths") +
+  xlab("Days from first 10 confirmed deaths") + 
+  ylab("First difference ln(cumulative deaths)") +
+  theme(plot.title = element_text(size=16, face="bold", hjust=0.5),legend.position="bottom",legend.title = element_blank()) +
+  scale_color_brewer(palette="Paired") 
+```
+```{r spain plot deaths, echo=FALSE,warning=FALSE, fig.align='center', fig.width=10, fig.asp=.5}
+ML.plot.spain
+```
+
+### Sweden
+
+```{r sweden ridge deaths, warning=FALSE, message=FALSE, include=FALSE}
+y = deaths.sweden_diff_ln$first_diff_log_deaths
+x = model.matrix(deaths.sweden_diff_ln$first_diff_log_deaths ~. , data = deaths.sweden_diff_ln)[,-1]
+lambda_grid = 10^seq(2,-2,length=100)
+n = nrow(x)
+model.sweden = cv.glmnet(x, y, family='gaussian', alpha=0, lambda=lambda_grid, nfolds = n)
+coef(model.sweden, s = "lambda.min")
+pred.sweden = predict(model.sweden, newx = x, s = "lambda.min")
+Rsq = R2(y, pred.sweden)
+Adj_R2(Rsq,n,2)
+RMSE(y, pred.sweden)
+
+ML.plot.sweden <- ggplot(deaths.sweden_diff_ln, aes(x=time, y=first_diff_log_deaths)) +
+  geom_point(size = 0.5) +
+  geom_line(aes(y = (pred.sweden)), size = 0.5) +
+  scale_x_continuous(limits = c(0, 90)) +
+  scale_y_continuous(limits = c(0, 1)) +
+  ggtitle("Sweden Deaths") +
+  xlab("Days from first 10 confirmed deaths") + 
+  ylab("First difference ln(cumulative deaths)") +
+  theme(plot.title = element_text(size=16, face="bold", hjust=0.5),legend.position="bottom",legend.title = element_blank()) +
+  scale_color_brewer(palette="Paired")
+```
+```{r sweden plot deaths, echo=FALSE,warning=FALSE, fig.align='center', fig.width=10, fig.asp=.5}
+ML.plot.sweden
+```
+
+### Switzerland 
+
+```{r switzerland ridge deaths, warning=FALSE, message=FALSE, include=FALSE}
+y = deaths.switzerland_diff_ln$first_diff_log_deaths
+x = model.matrix(deaths.switzerland_diff_ln$first_diff_log_deaths ~. , data = deaths.switzerland_diff_ln)[,-1]
+lambda_grid = 10^seq(2,-2,length=100)
+n = nrow(x)
+model.switzerland = cv.glmnet(x, y, family='gaussian', alpha=0, lambda=lambda_grid, nfolds = n)
+coef(model.switzerland, s = "lambda.min")
+pred.switzerland = predict(model.switzerland, newx = x, s = "lambda.min")
+Rsq = R2(y, pred.switzerland)
+Adj_R2(Rsq,n,2)
+RMSE(y, pred.switzerland)
+
+ML.plot.switzerland <- ggplot(deaths.switzerland_diff_ln, aes(x=time, y=first_diff_log_deaths)) +
+  geom_point(size = 0.5) +
+  geom_line(aes(y = (pred.switzerland)), size = 0.5) +
+  scale_x_continuous(limits = c(0, 90)) +
+  scale_y_continuous(limits = c(0, 1)) +
+  ggtitle("Switzerland Deaths") +
+  xlab("Days from first 10 confirmed deaths") + 
+  ylab("First difference ln(cumulative deaths)") +
+  theme(plot.title = element_text(size=16, face="bold", hjust=0.5),legend.position="bottom",legend.title = element_blank()) +
+  scale_color_brewer(palette="Paired")
+```
+```{r switzerland plot deaths,warning=FALSE, echo=FALSE, fig.align='center', fig.width=10, fig.asp=.5}
+ML.plot.switzerland
+```
+
+### United Kingdom 
+
+```{r uk ridge deaths, warning=FALSE, message=FALSE, include=FALSE}
+y = deaths.uk_diff_ln$first_diff_log_deaths
+x = model.matrix(deaths.uk_diff_ln$first_diff_log_deaths ~. , data = deaths.uk_diff_ln)[,-1]
+lambda_grid = 10^seq(2,-2,length=100)
+n = nrow(x)
+model.uk = cv.glmnet(x, y, family='gaussian', alpha=0, lambda=lambda_grid, nfolds = n)
+coef(model.uk, s = "lambda.min")
+pred.uk = predict(model.uk, newx = x, s = "lambda.min")
+Rsq = R2(y, pred.uk)
+Adj_R2(Rsq,n,2)
+RMSE(y, pred.uk)
+
+ML.plot.uk <- ggplot(deaths.uk_diff_ln, aes(x=time, y=first_diff_log_deaths)) +
+  geom_point(size = 0.5) +
+  geom_line(aes(y = (pred.uk)), size = 0.5) +
+  scale_x_continuous(limits = c(0, 90)) +
+  scale_y_continuous(limits = c(0, 1)) +
+  ggtitle("United Kingdom Deaths") +
+  xlab("Days from first 10 confirmed deaths") + 
+  ylab("First difference ln(cumulative deaths)") +
+  theme(plot.title = element_text(size=16, face="bold", hjust=0.5),legend.position="bottom",legend.title = element_blank()) +
+  scale_color_brewer(palette="Paired")
+```
+```{r uk plot deaths, echo=FALSE,warning=FALSE, fig.align='center', fig.width=10, fig.asp=.5}
+ML.plot.uk
+```
+
+### United States 
+
+```{r us ridge deaths, warning=FALSE, include=FALSE}
+y = deaths.us_diff_ln$first_diff_log_deaths
+x = model.matrix(deaths.us_diff_ln$first_diff_log_deaths ~. , data = deaths.us_diff_ln)[,-1]
+lambda_grid = 10^seq(2,-2,length=100)
+n = nrow(x)
+model.us = cv.glmnet(x, y, family='gaussian', alpha=0, lambda=lambda_grid, nfolds = n)
+coef(model.us, s = "lambda.min")
+pred.us = predict(model.us, newx = x, s = "lambda.min")
+Rsq = R2(y, pred.us)
+Adj_R2(Rsq,n,2)
+RMSE(y, pred.us)
+
+ML.plot.us <- ggplot(deaths.us_diff_ln, aes(x=time, y=first_diff_log_deaths)) +
+  geom_point(size = 0.5) +
+  geom_line(aes(y = (pred.us)), size = 0.5) +
+  scale_x_continuous(limits = c(0, 90)) +
+  scale_y_continuous(limits = c(0, 1)) +
+  ggtitle("United States Deaths") +
+  xlab("Days from first 10 confirmed deaths") + 
+  ylab("First difference ln(cumulative deaths)") +
+  theme(plot.title = element_text(size=16, face="bold", hjust=0.5),legend.position="bottom",legend.title = element_blank()) +
+  scale_color_brewer(palette="Paired") 
+```
+```{r us plot deaths, echo=FALSE,warning=FALSE, fig.align='center', fig.width=10, fig.asp=.5}
+ML.plot.us
+```
+
+## {-}
+
+<div style="text-align: right">
+<font size="2">
+<a href="#top">Back to top</a>
+</font> 
+</div>
+---
+
+<div class="boxBorder">
+
+# <a id="unemployment_calc"></a>Calculating Deaths per 1% Increase in Unemployment
+Using The Bureau of Labor statistics, there are 158.76 million workers in the U.S. and 1% of this is 1,587,600 (Feb 2019 data).
+The average death rate for 25-64 year olds = 402.625 per 100,000 (2017 CDC death data).
+Scaled up to 1,587,600 we get 6392 deaths per 1,587,600 people.
+Risk of death increases by 63% when you lose your job:  https://www.ncbi.nlm.nih.gov/pmc/articles/PMC3070776/. 
+Thus, this leads to 10,419.08 deaths or approximately 4,027 additional deaths per year per 1% increase in unemployment for working individuals (aged 25-64 years).
+
+</div>
+
+<br>
+
+```{r, include=FALSE}
+options(scipen=9999)
+us.cases.today = formatC(us$cases[which(us$date==Sys.Date()-1)],format="d",big.mark=",")
+us.deaths.today = formatC(deaths.us$deaths[which(deaths.us$date==Sys.Date()-1)],format="d",big.mark=",")
+us.deaths.outof.pop = (deaths.us$deaths[which(deaths.us$date==Sys.Date()-1)])/327200000
+us.deaths.per.mill = round((((deaths.us$deaths[which(deaths.us$date==Sys.Date()-1)]))/327200000)*1000000,1)
+```
+
+<div class="boxBorder">
+
+# <a id="death_calc"></a>Calculating Deaths per Million
+The United States has a population of 327.2 million. 
+The number of US cases as of `r format(Sys.Date()-1, '%B %d, %Y')` is `r us.cases.today`, and deaths `r us.deaths.today`. 
+`r us.deaths.today` deaths divided by 327.2 million = `r us.deaths.outof.pop`. 
+Multiplied by one million and we get `r us.deaths.per.mill` deaths per million. 
+Compare to the number of deaths typically due to flu/pneumonia in the US of 170 deaths per million.  
+The 1968 Hong Kong flu had a reported US death rate of 650 per million.  
+The 1958 flu year was as high as 663 deaths per million.  
+Neither epidemic led to any discussion of locking down the civilian population anywhere in the world.
+CDC’s weekly cumulative in-season estimates of flu cases, medical visits, hospitalizations and deaths in the United States:  https://www.cdc.gov/flu/about/burden/preliminary-in-season-estimates.htm. 
+
+</div>
+
+<br>
+
+<div style="text-align: right">
+<font size="2">
+<a href="#top">Back to top</a>
+</font> 
+</div>
+---
+
+# <a id="r_proof"></a>Mathematical Presentation of COVID-19 Transmission Dynamics
+
+###  Mathematical evidence that all susceptible patients were exposed by Day 1* of the epidemic in the United States and in approximately 80 other countries
+
+*Day 1 is the first day that a given country has >100 cases or >10 deaths.
+
+Current methods of detecting cases rely on the CDC 2019-Novel Coronavirus (2019-nCoV) Real-Time RT-PCR Diagnostic Panel, which is a real-time RT-PCR test intended for the detection of nucleic acid from the 2019-nCoV in the upper and lower respiratory tracts.  Positive results are indicative of active infection with 2019-nCoV but do not rule out bacterial infection or co-infection with other viruses. Viral PCR panels can only tell us who is currently infected, and not who has already been exposed.
+(Reference: https://www.fda.gov/media/134922/download)
+
+Serology testing for SARS-CoV-2 (aka 2019-nCoV, aka Covid-19, aka C19) is at increased demand in order to better quantify the number of cases of COVID-19, including those that may be asymptomatic or have recovered. Serology tests are blood-based tests that can be used to identify whether people have been exposed to a particular pathogen by looking at their immune response. In contrast, the RT-PCR tests currently being used globally to diagnose cases of COVID-19 can only indicate the presence of viral material during infection and will not indicate if a person was infected and subsequently recovered. These tests can give greater detail into the prevalence of a disease in a population by identifying individuals who have developed antibodies to the virus. Three serology tests have been FDA-approved thus far in April, 2020. (Reference: https://www.centerforhealthsecurity.org/resources/COVID-19/serology/Serology-based-tests-for-COVID-19.html)
+
+On April 3, 2020, Stanford University began the first large-scale serological studies to test individuals for viral IgM and IgG antibodies.  The presence of these antibodies indicates either that a person has active infection or has already been exposed and subsequently recovered.  These tests are crucial for understanding the true levels of exposure to COVID-19 in the general population because they can tell us who has already been exposed to the virus.
+(Reference: https://www.stanforddaily.com/2020/04/04/stanford-researchers-test-3200-people-for-covid-19-antibodies/)
+
+Numerous antibody test samples in Los Angeles County, Santa Clara County, pregnant women, Indiana and Ohio inmates, Chelsea Mass residents, Germany, Singapore and many other locations increasingly indicate that C19 was everywhere in the world months ago!
+
+Finally, we note that COVID-caused deaths are subject to reporting biases.  As of March 24, 2020, the CDC has issued guidance that any death can be coded as caused by COVID-19, even in the absence of confirmatory lab testing.  In Italy, Professor Walter Ricciardi, scientific advisor to Italy’s minister of health, stated: “The way in which we code deaths in our country is very generous in the sense that all the people who die in hospitals with the coronavirus are deemed to be dying of the coronavirus… On re-evaluation by the National Institute of Health, only 12 per cent of death certificates have shown a direct causality from coronavirus, while 88 per cent of patients who have died have at least one pre-morbidity - many had two or three”.  This implies that deaths in Italy are overreported by a factor of 8.
+(References: https://www.cdc.gov/nchs/data/nvss/coronavirus/Alert-2-New-ICD-code-introduced-for-COVID-19-deaths.pdf;  https://www.telegraph.co.uk/global-health/science-and-disease/have-many-coronavirus-patients-died-italy/) 
+
+This mathematical proof demonstrates that any time deformity in the growth trajectory of C19 cases or deaths (e.g. caused by the introduction of social isolation controls (SICs) in the US on March 19) would be observable as a departure from the straight line Aatish growth curves.  Such departures are not observed in the US and 80 other countries, strongly supporting the position that SICs are useless for controlling C19 spread.
+
+### Discrete Time:
+ 
+Proof that the growth curve is logistic in discrete time.  
+
+The logistic growth rate can only be identically the same in multiple countries and regions (with different cultures, reporting patterns, test kit availability, social isolation controls, population density, population mixing, etc.) on every day of the epidemic (defined as Day 1 being the first day that a given country has >100 cases or >10 deaths) if the virus is already fully saturated in the susceptible population and only those unable to suppress the virus (because of underlying medical conditions or inadequate immune response) test positive at a constant rate regardless of testing volume. Under those conditions, the rate of positive detection is constant.  The number of positive tests and deaths is ONLY a function of the number of tests administered in the population.
+ 
+Let $r$ = rate of positive tests in the population.
+
+Let $t_{i}$ = time of sampling.
+
+Let $n_{i}$ = number of tests acquired in a country’s population at time $i$ (country index dropped without loss of generality).
+ 
+Any sample $n_{i}$ at time $i$ will yield a rate of positive tests $r$.
+
+Therefore:
+
+<div align="center">
+$r * n_{i}$ = number of positives detected at time $i$
+
+$n_{i} * (1-r)$ or $n_{i} – (r*n_{i})$ = number of negative tests.
+</div>
+
+Thus the ratio of positive to negative tests, or the ODDS of a positive test is:
+
+<div align="center">
+$\displaystyle \frac{r*n_i}{n_i–(r*n_i)} = \displaystyle \frac{r}{1-r}$ = Constant $C$.
+</div> 
+ 
+As you keep sampling, if the ratio is fixed, you get the summation of $\sum \frac{r}{1-r}$ over all times $t$. Then, log odds = constant $C$ (logistic growth).
+
+If there is another growth model where $r$ is NOT constant then at each time $t_{i}$ there is an additional term, $\sum b_{i}*t_{i}$,
+where $b_{i}$ can change with every time point $t_{i}$.  
+
+Therefore we allow any possible set of time coefficients that can model any flexible growth model or decline model other than seroprevalence saturation.
+ 
+Consider proof by contradiction:
+ 
+Suppose, for contradiction that there is some time dependent growth (or decline) curve:
+
+<div align="center">
+$\displaystyle \sum b_{i}*t_{i}$ over $i$ $(i = 1,2,…,K_{i})$, 
+</div>
+
+where $b_{i}$ can change with every time point $t_i$.  Let’s call that sum $A_i$, which can take any possible shape including positive at times and negative at times.
+ 
+In order for $A_i$ to be consistent with the straight line logistic growth curve, it has to be the case that the new tests at time $i$ satisfy the following equation of motion:
+
+<div align="center"> 
+$\displaystyle \frac{rN_i}{(1-r)N_i} + \frac{rN_i}{(1-r)N_i}A_i = r’$ for some $r’$ not equal to $r$ or 0.
+</div>
+
+This implies that, for all $i$:
+
+<div align="center"> 
+$\displaystyle \frac{r}{(1-r)} + \displaystyle \frac{r}{(1-r)}A_i = r’$
+
+$A_i = \displaystyle \frac{r’}{r}-r'-1 = C’$,
+</div>
+
+Consider the first observation:
+
+<div align="center"> 
+$rb_1 = \displaystyle \frac{r’}{r} -r -1$ 
+
+$b_1 = \displaystyle \frac{r’}{r^2} - 1 - \displaystyle \frac{1}{r} = C'$. 
+</div>
+
+b1 = r'/r^2 - 1 - 1/r = C'
+
+Consider the second observation:
+
+<div align="center"> 
+$A_2 = b_1 + 2b_2 = \displaystyle \frac{r’}{r} - 1 - \displaystyle \frac{1}{r} = C’$ 
+
+$A_2 = b_1 + b_2*2 = b_1  = C’$
+
+$A_2 - b_1 = 2b_2 = 0 = C’$.
+</div>
+
+Then:
+
+<div align="center">
+$A_j = C' + b_j*j = C’$.
+</div>
+
+Therefore $b_j = 0$ for all $j \ge 0$.
+ 
+**Q.E.D.**
+
+### Continuous time:
+
+Consider the straight lines demonstrated in the plot above "New Cases By Total Confirmed Cases" (displays actual data, not fitted regression lines), adapted from the plot by Aatish Bhatia at https://aatishb.com/covidtrends/:
+ 
+<div align="center">
+$ln$(first difference MA cases) = $r*ln$(MA cases)
+
+(first difference MA cases) = $r’*$(MA cases)
+</div> 
+
+(MA is Moving Average; Aatish used 7 days, we use 3 days).
+
+Both imply that:
+
+<div align="center">
+(1) $\displaystyle \frac{dQ}{dt} = C*Q(t)$  for some estimable parameter $C$,
+</div>
+
+where $t$ is time and $Q(t)$ is the cumulative C19 cases reported at time $t$.
+
+Let $dQ/dt$ = some general (smoothly continuous, twice differentiable, etc.) function of $Q(t)$ and $t$.
+
+We want to establish that since $C$ is identical in nearly all countries (including the United States), the virus must be saturated in the populations of all of these countries, at least until the susceptibles successfully or unsuccessfully suppress the virus.  This appears to happen in all countries by Day 50.
+
+Consider the equation of motion:
+
+<div align="center">
+$\displaystyle \frac{dQ}{dt} = G(Q,t) = G_1(Q(t),t) + G_2(Q(t),t)$,
+</div>
+
+where $G_1$ is only a function of $Q$ and represents the background baseline seroprevalence ($r$) in the population (e.g. United States) on Day One of the epidemic (3/3/2020 in the United States).
+
+Then:
+ 
+<div align="center">
+$\displaystyle \frac{d^2Q}{dt^2} = \displaystyle \frac{dG_1}{dt} + \displaystyle \frac{dG_2}{dt} = 0 + [\displaystyle \frac{∂G_2}{∂Q}] \displaystyle \frac{∂Q}{∂t} + \displaystyle \frac{∂G_2}{∂t}$.
+</div>
+
+From (1): 
+ 
+<div align="center">
+$\displaystyle \frac{d^2Q}{dt^2} = [\displaystyle \frac{∂G_2}{∂Q}](C*Q) +  \displaystyle \frac{∂G_2}{∂t}$.
+</div>
+
+The first term is only a function of $Q$, not time.  The second term is demonstrated to be zero empirically in Aatish’s curves. 
+
+Since there is no acceleration or deceleration in $dQ/dt$ over time:
+ 
+<div align="center">
+$\displaystyle \frac{dQ}{dt} = C*Q = [\displaystyle \frac{∂G_2}{∂Q}](C*Q)  = C''Q$ ,  
+</div>
+
+where $C''$ is constant in $Q$, implying that seeing all countries on the same $dQ/dt$ curve is ONLY consistent with an epidemic that is neither growing nor declining with time.
+ 
+That is to say, since $C''$ is the same for all countries, they must all have the same rate of PCR Virus detection, and the seroprevalence must be identical.  That is only possible if SICs cannot and do not work and all the PCR tests are picking up is background unresolved virus in sick patients who can’t suppress C19.
+
+**Q.E.D.**
+
+<div style="text-align: right">
+<font size="2">
+<a href="#top">Back to top</a>
+</font> 
+</div>
+---
+
+<font size="2">
+Data adapted from Johns Hopkins Unversity CSSE 2019 Novel Coronavirus COVID-19 (2019-nCoV) Data Repository: https://github.com/CSSEGISandData/COVID-19.
+
+(All rights reserved, copyright pending.)
+</font> 
+
+<base target="_blank"/>
