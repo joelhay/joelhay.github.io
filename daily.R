@@ -450,7 +450,7 @@ total_global_deaths$log_deaths <- log(total_global_deaths$deaths)
 #create time series panels for cases and deaths
 #setwd("EconoMedRx Dropbox/Roy Zawadzki/E-value Team/COVID daily data/")
 #covid_panel_cases <- countries_100
-setwd("~/daily_scripts")
+#setwd("~/daily_scripts")
 covid_panel_cases <- read_csv("Daily_Datafiles/daily_latest.csv")
 covid_panel_cases[is.na(covid_panel_cases)] <- 0
 covid_panel_cases <- covid_panel_cases %>% arrange(country)
@@ -568,7 +568,7 @@ write_csv(covid_panel_deaths, "Time_Series_Datafiles/covid_ts_deaths_panel_lates
 # library(writexl)
 # library(ggrepel)
 library(lubridate)
-setwd("~/daily_scripts/")
+# setwd("~/daily_scripts/")
 #Use COUNTRIES dataset if you want to look at cases since 1/22
 #Use global_cases_100 data to look at cases >100 from day 0
 #you must run all of the code below in order to create these datasets
