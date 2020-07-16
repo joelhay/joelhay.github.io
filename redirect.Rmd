@@ -1,0 +1,9 @@
+<div style="text-align: center">
+<div class="myButton">
+<font size="+5">
+[Please browse to https://joelhay.com 
+Cannot Automatically Redirect]
+</font>
+</div>
+</div>
+

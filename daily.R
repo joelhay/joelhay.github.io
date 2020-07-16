@@ -7,7 +7,6 @@ library(viridis)
 library(RColorBrewer)
 
 
-setwd("~/daily_scripts")
 #Use COUNTRIES dataset if you want to look at cases since 1/22
 #Use COUNTRIES_100 data to look at cases >100 from day 0
 #you must run all of the code below in order to create these datasets

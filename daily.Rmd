@@ -8,7 +8,6 @@ editor_options:
 ---
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
-setwd("~/daily_scripts")
 #setwd("~/EconoMedRx Dropbox/Cynthia G/E-value Team/COVID19/LTE Annals Int Med/Markdown files and outputs")
 ```
 
