@@ -1,6 +1,6 @@
 ---
 title: "COVID-19 By Country"
-date: "`r format(Sys.time(), '%B %d, %Y')`"
+date: "`r format(Sys.time(), '%B %d, %Y %H:%M:%S')`"
 output: 
   html_document: 
 editor_options:
