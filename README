@@ -1,0 +1,9 @@
+Setup by Joel Berman
+
+Runs the daily.sh via crontab
+daily.R is Cynthia's script to provide the daily data files
+daily.Rmd is Nadine's script to knit daily.html
+daily.html is renamed to index.html and pushed to the github repo
+joelhay.github.io where it is served on the web.
+
+
