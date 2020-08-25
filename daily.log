@@ -88761,3 +88761,743 @@ List of 1
 
 
 /usr/bin/pandoc +RTS -K512m -RTS daily.utf8.md --to html4 --from markdown+autolink_bare_uris+tex_math_single_backslash --output daily.html --email-obfuscation none --self-contained --standalone --section-divs --template /home/graphs/R/x86_64-pc-linux-gnu-library/3.6/rmarkdown/rmd/h/default.html --no-highlight --variable highlightjs=1 --variable 'theme:bootstrap' --include-in-header /tmp/Rtmp4zLh10/rmarkdown-str25d495e3b9602.html --mathjax --variable 'mathjax-url:https://mathjax.rstudio.com/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML' --lua-filter /home/graphs/R/x86_64-pc-linux-gnu-library/3.6/rmarkdown/rmd/lua/pagebreak.lua --lua-filter /home/graphs/R/x86_64-pc-linux-gnu-library/3.6/rmarkdown/rmd/lua/latex-div.lua 
+[master 581b6b3] 2020-08-24_16:00:01
+ 3 files changed, 741 insertions(+), 1 deletion(-)
+ rewrite Rplots.pdf (87%)
+Branch 'master' set up to track remote branch 'master' from 'origin'.
+  |                                                                              |                                                                      |   0%  |                                                                              |.                                                                     |   1%
+   inline R code fragments
+
+  |                                                                              |.                                                                     |   2%
+label: setup (with options) 
+List of 1
+ $ include: logi FALSE
+
+  |                                                                              |..                                                                    |   2%
+  ordinary text without R code
+
+  |                                                                              |..                                                                    |   3%
+label: unnamed-chunk-1 (with options) 
+List of 2
+ $ echo  : logi FALSE
+ $ engine: chr "css"
+
+  |                                                                              |...                                                                   |   4%
+  ordinary text without R code
+
+  |                                                                              |...                                                                   |   5%
+label: daily cases panel (with options) 
+List of 1
+ $ include: logi FALSE
+
+  |                                                                              |....                                                                  |   6%
+  ordinary text without R code
+
+
+label: daily deaths panel (with options) 
+List of 1
+ $ include: logi FALSE
+
+  |                                                                              |.....                                                                 |   7%
+  ordinary text without R code
+
+  |                                                                              |......                                                                |   8%
+label: calculating total global deaths (with options) 
+List of 1
+ $ include: logi FALSE
+
+  |                                                                              |......                                                                |   9%
+  ordinary text without R code
+
+  |                                                                              |.......                                                               |  10%
+label: constructing datafiles for ridge regressions (with options) 
+List of 1
+ $ include: logi FALSE
+
+
+  ordinary text without R code
+
+  |                                                                              |........                                                              |  11%
+label: first diff 7-day MA daily cases by total cases (with options) 
+List of 6
+ $ echo     : logi FALSE
+ $ warning  : logi FALSE
+ $ message  : logi FALSE
+ $ fig.align: chr "center"
+ $ fig.width: num 10
+ $ fig.asp  : num 0.45
+
+  |                                                                              |........                                                              |  12%
+  ordinary text without R code
+
+  |                                                                              |.........                                                             |  13%
+label: first diff 7-day MA daily deaths by total deaths (with options) 
+List of 6
+ $ echo     : logi FALSE
+ $ warning  : logi FALSE
+ $ message  : logi FALSE
+ $ fig.align: chr "center"
+ $ fig.width: num 10
+ $ fig.asp  : num 0.45
+
+  |                                                                              |..........                                                            |  14%
+  ordinary text without R code
+
+
+label: plot log cum cases (with options) 
+List of 5
+ $ echo     : logi FALSE
+ $ warning  : logi FALSE
+ $ fig.align: chr "center"
+ $ fig.width: num 10
+ $ fig.asp  : num 0.45
+
+  |                                                                              |...........                                                           |  15%
+  ordinary text without R code
+
+  |                                                                              |...........                                                           |  16%
+label: plot log cum deaths (with options) 
+List of 5
+ $ echo     : logi FALSE
+ $ warning  : logi FALSE
+ $ fig.align: chr "center"
+ $ fig.width: num 10
+ $ fig.asp  : num 0.45
+
+  |                                                                              |............                                                          |  17%
+  ordinary text without R code
+
+  |                                                                              |............                                                          |  18%
+label: global ridge cases (with options) 
+List of 2
+ $ warning: logi FALSE
+ $ include: logi FALSE
+
+  |                                                                              |.............                                                         |  18%
+label: global plot cases (with options) 
+List of 5
+ $ echo     : logi FALSE
+ $ warning  : logi FALSE
+ $ fig.align: chr "center"
+ $ fig.width: num 10
+ $ fig.asp  : num 0.5
+
+  |                                                                              |.............                                                         |  19%
+  ordinary text without R code
+
+  |                                                                              |..............                                                        |  20%
+label: canada ridge cases (with options) 
+List of 3
+ $ warning: logi FALSE
+ $ message: logi FALSE
+ $ include: logi FALSE
+
+  |                                                                              |...............                                                       |  21%
+label: canada plot cases (with options) 
+List of 5
+ $ echo     : logi FALSE
+ $ warning  : logi FALSE
+ $ fig.align: chr "center"
+ $ fig.width: num 10
+ $ fig.asp  : num 0.5
+
+  |                                                                              |...............                                                       |  22%
+  ordinary text without R code
+
+  |                                                                              |................                                                      |  22%
+label: china ridge cases (with options) 
+List of 2
+ $ warning: logi FALSE
+ $ include: logi FALSE
+
+  |                                                                              |................                                                      |  23%
+label: china plot cases (with options) 
+List of 5
+ $ echo     : logi FALSE
+ $ warning  : logi FALSE
+ $ fig.align: chr "center"
+ $ fig.width: num 10
+ $ fig.asp  : num 0.5
+
+  |                                                                              |.................                                                     |  24%
+  ordinary text without R code
+
+  |                                                                              |.................                                                     |  25%
+label: france ridge cases (with options) 
+List of 2
+ $ warning: logi FALSE
+ $ include: logi FALSE
+
+  |                                                                              |..................                                                    |  26%
+label: france plot cases (with options) 
+List of 5
+ $ echo     : logi FALSE
+ $ warning  : logi FALSE
+ $ fig.align: chr "center"
+ $ fig.width: num 10
+ $ fig.asp  : num 0.5
+
+
+  ordinary text without R code
+
+  |                                                                              |...................                                                   |  27%
+label: germany ridge cases (with options) 
+List of 2
+ $ warning: logi FALSE
+ $ include: logi FALSE
+
+  |                                                                              |....................                                                  |  28%
+label: germany plot cases (with options) 
+List of 5
+ $ echo     : logi FALSE
+ $ warning  : logi FALSE
+ $ fig.align: chr "center"
+ $ fig.width: num 10
+ $ fig.asp  : num 0.5
+
+  |                                                                              |....................                                                  |  29%
+  ordinary text without R code
+
+  |                                                                              |.....................                                                 |  30%
+label: hubei ridge cases (with options) 
+List of 2
+ $ warning: logi FALSE
+ $ include: logi FALSE
+
+
+label: hubei plot cases (with options) 
+List of 5
+ $ echo     : logi FALSE
+ $ warning  : logi FALSE
+ $ fig.align: chr "center"
+ $ fig.width: num 10
+ $ fig.asp  : num 0.5
+
+  |                                                                              |......................                                                |  31%
+  ordinary text without R code
+
+  |                                                                              |......................                                                |  32%
+label: iran ridge cases (with options) 
+List of 2
+ $ warning: logi FALSE
+ $ include: logi FALSE
+
+  |                                                                              |.......................                                               |  33%
+label: iran plot cases (with options) 
+List of 5
+ $ echo     : logi FALSE
+ $ warning  : logi FALSE
+ $ fig.align: chr "center"
+ $ fig.width: num 10
+ $ fig.asp  : num 0.5
+
+  |                                                                              |........................                                              |  34%
+  ordinary text without R code
+
+
+label: italy ridge cases (with options) 
+List of 2
+ $ warning: logi FALSE
+ $ include: logi FALSE
+
+  |                                                                              |.........................                                             |  35%
+label: italy plot cases (with options) 
+List of 5
+ $ echo     : logi FALSE
+ $ warning  : logi FALSE
+ $ fig.align: chr "center"
+ $ fig.width: num 10
+ $ fig.asp  : num 0.5
+
+  |                                                                              |.........................                                             |  36%
+  ordinary text without R code
+
+  |                                                                              |..........................                                            |  37%
+label: japan ridge cases (with options) 
+List of 2
+ $ warning: logi FALSE
+ $ include: logi FALSE
+
+  |                                                                              |..........................                                            |  38%
+label: japan plot cases (with options) 
+List of 5
+ $ echo     : logi FALSE
+ $ warning  : logi FALSE
+ $ fig.align: chr "center"
+ $ fig.width: num 10
+ $ fig.asp  : num 0.5
+
+  |                                                                              |...........................                                           |  38%
+  ordinary text without R code
+
+  |                                                                              |...........................                                           |  39%
+label: south korea ridge cases (with options) 
+List of 2
+ $ warning: logi FALSE
+ $ include: logi FALSE
+
+  |                                                                              |............................                                          |  40%
+label: south korea plot cases (with options) 
+List of 5
+ $ echo     : logi FALSE
+ $ warning  : logi FALSE
+ $ fig.align: chr "center"
+ $ fig.width: num 10
+ $ fig.asp  : num 0.5
+
+  |                                                                              |.............................                                         |  41%
+  ordinary text without R code
+
+  |                                                                              |.............................                                         |  42%
+label: netherlands ridge cases (with options) 
+List of 3
+ $ warning: logi FALSE
+ $ message: logi FALSE
+ $ include: logi FALSE
+
+  |                                                                              |..............................                                        |  42%
+label: netherlands plot cases (with options) 
+List of 5
+ $ echo     : logi FALSE
+ $ warning  : logi FALSE
+ $ fig.align: chr "center"
+ $ fig.width: num 10
+ $ fig.asp  : num 0.5
+
+  |                                                                              |..............................                                        |  43%
+  ordinary text without R code
+
+  |                                                                              |...............................                                       |  44%
+label: norway ridge cases (with options) 
+List of 3
+ $ warning: logi FALSE
+ $ message: logi FALSE
+ $ include: logi FALSE
+
+  |                                                                              |...............................                                       |  45%
+label: norway plot cases (with options) 
+List of 5
+ $ echo     : logi FALSE
+ $ warning  : logi FALSE
+ $ fig.align: chr "center"
+ $ fig.width: num 10
+ $ fig.asp  : num 0.5
+
+  |                                                                              |................................                                      |  46%
+  ordinary text without R code
+
+
+label: spain ridge cases (with options) 
+List of 2
+ $ warning: logi FALSE
+ $ include: logi FALSE
+
+  |                                                                              |.................................                                     |  47%
+label: spain plot cases (with options) 
+List of 5
+ $ echo     : logi FALSE
+ $ warning  : logi FALSE
+ $ fig.align: chr "center"
+ $ fig.width: num 10
+ $ fig.asp  : num 0.5
+
+  |                                                                              |..................................                                    |  48%
+  ordinary text without R code
+
+  |                                                                              |..................................                                    |  49%
+label: sweden ridge cases (with options) 
+List of 3
+ $ warning: logi FALSE
+ $ message: logi FALSE
+ $ include: logi FALSE
+
+  |                                                                              |...................................                                   |  50%
+label: sweden plot cases (with options) 
+List of 5
+ $ echo     : logi FALSE
+ $ warning  : logi FALSE
+ $ fig.align: chr "center"
+ $ fig.width: num 10
+ $ fig.asp  : num 0.5
+
+
+  ordinary text without R code
+
+  |                                                                              |....................................                                  |  51%
+label: switzerland ridge cases (with options) 
+List of 3
+ $ warning: logi FALSE
+ $ message: logi FALSE
+ $ include: logi FALSE
+
+  |                                                                              |....................................                                  |  52%
+label: switzerland plot cases (with options) 
+List of 5
+ $ echo     : logi FALSE
+ $ warning  : logi FALSE
+ $ fig.align: chr "center"
+ $ fig.width: num 10
+ $ fig.asp  : num 0.5
+
+  |                                                                              |.....................................                                 |  53%
+  ordinary text without R code
+
+  |                                                                              |......................................                                |  54%
+label: uk ridge cases (with options) 
+List of 3
+ $ warning: logi FALSE
+ $ message: logi FALSE
+ $ include: logi FALSE
+
+
+label: uk plot cases (with options) 
+List of 5
+ $ echo     : logi FALSE
+ $ warning  : logi FALSE
+ $ fig.align: chr "center"
+ $ fig.width: num 10
+ $ fig.asp  : num 0.5
+
+  |                                                                              |.......................................                               |  55%
+  ordinary text without R code
+
+  |                                                                              |.......................................                               |  56%
+label: us ridge cases (with options) 
+List of 2
+ $ warning: logi FALSE
+ $ include: logi FALSE
+
+  |                                                                              |........................................                              |  57%
+label: us plot cases (with options) 
+List of 5
+ $ echo     : logi FALSE
+ $ warning  : logi FALSE
+ $ fig.align: chr "center"
+ $ fig.width: num 10
+ $ fig.asp  : num 0.5
+
+  |                                                                              |........................................                              |  58%
+  ordinary text without R code
+
+  |                                                                              |.........................................                             |  58%
+label: global ridge deaths (with options) 
+List of 2
+ $ warning: logi FALSE
+ $ include: logi FALSE
+
+  |                                                                              |.........................................                             |  59%
+label: global plot deaths (with options) 
+List of 5
+ $ warning  : logi FALSE
+ $ echo     : logi FALSE
+ $ fig.align: chr "center"
+ $ fig.width: num 10
+ $ fig.asp  : num 0.5
+
+  |                                                                              |..........................................                            |  60%
+  ordinary text without R code
+
+  |                                                                              |...........................................                           |  61%
+label: canada ridge deaths (with options) 
+List of 3
+ $ warning: logi FALSE
+ $ message: logi FALSE
+ $ include: logi FALSE
+
+  |                                                                              |...........................................                           |  62%
+label: canada plot deaths (with options) 
+List of 5
+ $ warning  : logi FALSE
+ $ echo     : logi FALSE
+ $ fig.align: chr "center"
+ $ fig.width: num 10
+ $ fig.asp  : num 0.5
+
+  |                                                                              |............................................                          |  62%
+  ordinary text without R code
+
+  |                                                                              |............................................                          |  63%
+label: china ridge deaths (with options) 
+List of 2
+ $ warning: logi FALSE
+ $ include: logi FALSE
+
+  |                                                                              |.............................................                         |  64%
+label: china plot deaths (with options) 
+List of 5
+ $ warning  : logi FALSE
+ $ echo     : logi FALSE
+ $ fig.align: chr "center"
+ $ fig.width: num 10
+ $ fig.asp  : num 0.5
+
+  |                                                                              |.............................................                         |  65%
+  ordinary text without R code
+
+  |                                                                              |..............................................                        |  66%
+label: france ridge deaths (with options) 
+List of 2
+ $ warning: logi FALSE
+ $ include: logi FALSE
+
+
+label: france plot deaths (with options) 
+List of 5
+ $ warning  : logi FALSE
+ $ echo     : logi FALSE
+ $ fig.align: chr "center"
+ $ fig.width: num 10
+ $ fig.asp  : num 0.5
+
+  |                                                                              |...............................................                       |  67%
+  ordinary text without R code
+
+  |                                                                              |................................................                      |  68%
+label: germany ridge deaths (with options) 
+List of 2
+ $ warning: logi FALSE
+ $ include: logi FALSE
+
+  |                                                                              |................................................                      |  69%
+label: germany plot deaths (with options) 
+List of 5
+ $ warning  : logi FALSE
+ $ echo     : logi FALSE
+ $ fig.align: chr "center"
+ $ fig.width: num 10
+ $ fig.asp  : num 0.5
+
+  |                                                                              |.................................................                     |  70%
+  ordinary text without R code
+
+
+label: hubei ridge deaths (with options) 
+List of 2
+ $ warning: logi FALSE
+ $ include: logi FALSE
+
+  |                                                                              |..................................................                    |  71%
+label: hubei plot deaths (with options) 
+List of 5
+ $ warning  : logi FALSE
+ $ echo     : logi FALSE
+ $ fig.align: chr "center"
+ $ fig.width: num 10
+ $ fig.asp  : num 0.5
+
+  |                                                                              |..................................................                    |  72%
+  ordinary text without R code
+
+  |                                                                              |...................................................                   |  73%
+label: iran ridge deaths (with options) 
+List of 2
+ $ warning: logi FALSE
+ $ include: logi FALSE
+
+  |                                                                              |....................................................                  |  74%
+label: iran plot deaths (with options) 
+List of 5
+ $ warning  : logi FALSE
+ $ echo     : logi FALSE
+ $ fig.align: chr "center"
+ $ fig.width: num 10
+ $ fig.asp  : num 0.5
+
+
+  ordinary text without R code
+
+  |                                                                              |.....................................................                 |  75%
+label: italy ridge deaths (with options) 
+List of 2
+ $ warning: logi FALSE
+ $ include: logi FALSE
+
+  |                                                                              |.....................................................                 |  76%
+label: italy plot deaths (with options) 
+List of 5
+ $ warning  : logi FALSE
+ $ echo     : logi FALSE
+ $ fig.align: chr "center"
+ $ fig.width: num 10
+ $ fig.asp  : num 0.5
+
+  |                                                                              |......................................................                |  77%
+  ordinary text without R code
+
+  |                                                                              |......................................................                |  78%
+label: japan ridge deaths (with options) 
+List of 2
+ $ warning: logi FALSE
+ $ include: logi FALSE
+
+  |                                                                              |.......................................................               |  78%
+label: japan plot deaths (with options) 
+List of 5
+ $ warning  : logi FALSE
+ $ echo     : logi FALSE
+ $ fig.align: chr "center"
+ $ fig.width: num 10
+ $ fig.asp  : num 0.5
+
+  |                                                                              |.......................................................               |  79%
+  ordinary text without R code
+
+  |                                                                              |........................................................              |  80%
+label: south korea ridge deaths (with options) 
+List of 2
+ $ warning: logi FALSE
+ $ include: logi FALSE
+
+  |                                                                              |.........................................................             |  81%
+label: south korea plot deaths (with options) 
+List of 5
+ $ warning  : logi FALSE
+ $ echo     : logi FALSE
+ $ fig.align: chr "center"
+ $ fig.width: num 10
+ $ fig.asp  : num 0.5
+
+  |                                                                              |.........................................................             |  82%
+  ordinary text without R code
+
+  |                                                                              |..........................................................            |  82%
+label: netherlands ridge deaths (with options) 
+List of 3
+ $ warning: logi FALSE
+ $ message: logi FALSE
+ $ include: logi FALSE
+
+  |                                                                              |..........................................................            |  83%
+label: netherlands plot deaths (with options) 
+List of 5
+ $ warning  : logi FALSE
+ $ echo     : logi FALSE
+ $ fig.align: chr "center"
+ $ fig.width: num 10
+ $ fig.asp  : num 0.5
+
+  |                                                                              |...........................................................           |  84%
+  ordinary text without R code
+
+  |                                                                              |...........................................................           |  85%
+label: norway ridge deaths (with options) 
+List of 3
+ $ warning: logi FALSE
+ $ message: logi FALSE
+ $ include: logi FALSE
+
+  |                                                                              |............................................................          |  86%
+label: norway plot deaths (with options) 
+List of 5
+ $ echo     : logi FALSE
+ $ warning  : logi FALSE
+ $ fig.align: chr "center"
+ $ fig.width: num 10
+ $ fig.asp  : num 0.5
+
+
+  ordinary text without R code
+
+  |                                                                              |.............................................................         |  87%
+label: spain ridge deaths (with options) 
+List of 2
+ $ warning: logi FALSE
+ $ include: logi FALSE
+
+  |                                                                              |..............................................................        |  88%
+label: spain plot deaths (with options) 
+List of 5
+ $ echo     : logi FALSE
+ $ warning  : logi FALSE
+ $ fig.align: chr "center"
+ $ fig.width: num 10
+ $ fig.asp  : num 0.5
+
+  |                                                                              |..............................................................        |  89%
+  ordinary text without R code
+
+  |                                                                              |...............................................................       |  90%
+label: sweden ridge deaths (with options) 
+List of 3
+ $ warning: logi FALSE
+ $ message: logi FALSE
+ $ include: logi FALSE
+
+
+label: sweden plot deaths (with options) 
+List of 5
+ $ echo     : logi FALSE
+ $ warning  : logi FALSE
+ $ fig.align: chr "center"
+ $ fig.width: num 10
+ $ fig.asp  : num 0.5
+
+  |                                                                              |................................................................      |  91%
+  ordinary text without R code
+
+  |                                                                              |................................................................      |  92%
+label: switzerland ridge deaths (with options) 
+List of 3
+ $ warning: logi FALSE
+ $ message: logi FALSE
+ $ include: logi FALSE
+
+  |                                                                              |.................................................................     |  93%
+label: switzerland plot deaths (with options) 
+List of 5
+ $ warning  : logi FALSE
+ $ echo     : logi FALSE
+ $ fig.align: chr "center"
+ $ fig.width: num 10
+ $ fig.asp  : num 0.5
+
+  |                                                                              |..................................................................    |  94%
+  ordinary text without R code
+
+
+label: uk ridge deaths (with options) 
+List of 3
+ $ warning: logi FALSE
+ $ message: logi FALSE
+ $ include: logi FALSE
+
+  |                                                                              |...................................................................   |  95%
+label: uk plot deaths (with options) 
+List of 5
+ $ echo     : logi FALSE
+ $ warning  : logi FALSE
+ $ fig.align: chr "center"
+ $ fig.width: num 10
+ $ fig.asp  : num 0.5
+
+  |                                                                              |...................................................................   |  96%
+  ordinary text without R code
+
+  |                                                                              |....................................................................  |  97%
+label: us ridge deaths (with options) 
+List of 2
+ $ warning: logi FALSE
+ $ include: logi FALSE
+
+  |                                                                              |....................................................................  |  98%
+label: us plot deaths (with options) 
+List of 5
+ $ echo     : logi FALSE
+ $ warning  : logi FALSE
+ $ fig.align: chr "center"
+ $ fig.width: num 10
+ $ fig.asp  : num 0.5
+
+  |                                                                              |..................................................................... |  98%
+  ordinary text without R code
+
+  |                                                                              |..................................................................... |  99%
+label: unnamed-chunk-2 (with options) 
+List of 1
+ $ include: logi FALSE
+
+  |                                                                              |......................................................................| 100%
+   inline R code fragments
+
+
+/usr/bin/pandoc +RTS -K512m -RTS daily.utf8.md --to html4 --from markdown+autolink_bare_uris+tex_math_single_backslash --output daily.html --email-obfuscation none --self-contained --standalone --section-divs --template /home/graphs/R/x86_64-pc-linux-gnu-library/3.6/rmarkdown/rmd/h/default.html --no-highlight --variable highlightjs=1 --variable 'theme:bootstrap' --include-in-header /tmp/RtmpRsyhXF/rmarkdown-str262e621d3b953.html --mathjax --variable 'mathjax-url:https://mathjax.rstudio.com/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML' --lua-filter /home/graphs/R/x86_64-pc-linux-gnu-library/3.6/rmarkdown/rmd/lua/pagebreak.lua --lua-filter /home/graphs/R/x86_64-pc-linux-gnu-library/3.6/rmarkdown/rmd/lua/latex-div.lua 
