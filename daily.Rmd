@@ -649,7 +649,7 @@ plot.daily_log_cases <-
   geom_line(aes(linetype=country, color=country), size=0.5) +
   scale_fill_manual(values = mycolors) +
   scale_linetype_manual(values = mylines)+
-  scale_x_continuous(limits = c(0, 100), breaks=seq(0,100,by=10), labels=seq(0,100,by=10)) +
+  scale_x_continuous(limits = c(0, 365), breaks=seq(0,365,by=10), labels=seq(0,365,by=10)) +
   scale_y_continuous(limits = c(0, 16)) +
   ggtitle("Log of Cumulative Cases Since 100th Case Reported") +
   xlab("Days Since 100th Case Reported") +
@@ -677,7 +677,7 @@ plot.daily_log_deaths <-
   geom_line(aes(linetype=country, color=country), size=0.5) +
   scale_fill_manual(values = mycolors) +
   scale_linetype_manual(values = mylines) +
-  scale_x_continuous(limits = c(0, 100), breaks=seq(0,100,by=10), labels=seq(0,100,by=10)) +
+  scale_x_continuous(limits = c(0, 365), breaks=seq(0,365,by=10), labels=seq(0,365,by=10)) +
   scale_y_continuous(limits = c(0, 16)) +
   ggtitle("Log of Cumulative Deaths since 10th Death Reported") +
   xlab("Days since 10th Death Reported") +
@@ -734,7 +734,7 @@ ggplot(global_diff_ln, aes(x=time, y=first_diff_log_cases)) +
   geom_point(aes(color=country),size = 0.5) +
   geom_line(aes(y = (pred.global)), size = 0.5) +
   scale_fill_manual(values = mycolors) +
-  scale_x_continuous(limits = c(0, 90)) +
+  scale_x_continuous(limits = c(0, 365)) +
   scale_y_continuous(limits = c(0, 1)) +
   ggtitle("Global Cases") +
   xlab("Days from first 100 confirmed cases") + 
@@ -759,7 +759,7 @@ RMSE(y, pred.canada)
 ML.plot.canada <- ggplot(canada_diff_ln, aes(x=time, y=first_diff_log_cases)) +
   geom_point(size = 0.5) +
   geom_line(aes(y = (pred.canada)), size = 0.5) +
-  scale_x_continuous(limits = c(0, 90)) +
+  scale_x_continuous(limits = c(0, 365)) +
   scale_y_continuous(limits = c(0, 1)) +  
   ggtitle("Canada Cases") +
   xlab("Days from first 100 confirmed cases") + 
@@ -788,7 +788,7 @@ RMSE(y, pred.china_nohubei)
 ML.plot.china_nohubei <- ggplot(china_nohubei_diff_ln, aes(x=time, y=first_diff_log_cases)) +
   geom_point(size = 0.5) +
   geom_line(aes(y = (pred.china_nohubei)), size = 0.5) +
-  scale_x_continuous(limits = c(0, 90)) +
+  scale_x_continuous(limits = c(0, 365)) +
   scale_y_continuous(limits = c(0, 1)) +
   ggtitle("China Cases (excluding Hubei)") +
   xlab("Days from first 100 confirmed cases") + 
@@ -817,7 +817,7 @@ RMSE(y, pred.france)
 ML.plot.france <- ggplot(france_diff_ln, aes(x=time, y=first_diff_log_cases)) +
   geom_point(size = 0.5) +
   geom_line(aes(y = (pred.france)), size = 0.5) +
-  scale_x_continuous(limits = c(0, 90)) +
+  scale_x_continuous(limits = c(0, 365)) +
   scale_y_continuous(limits = c(0, 1)) +
   ggtitle("France Cases") +
   xlab("Days from first 100 confirmed cases") + 
@@ -847,7 +847,7 @@ ML.plot.germany <- ggplot(germany_diff_ln, aes(x=time, y=first_diff_log_cases)) 
   geom_point(size = 0.5) +
   geom_line(aes(y = (pred.germany)), size = 0.5) +
   ggtitle("Germany Cases") +
-  scale_x_continuous(limits = c(0, 90)) +
+  scale_x_continuous(limits = c(0, 365)) +
   scale_y_continuous(limits = c(0, 1)) +  
   xlab("Days from first 100 confirmed cases") + 
   ylab("First difference ln(cumulative cases)") +
@@ -875,7 +875,7 @@ RMSE(y, pred.hubei)
 ML.plot.hubei <- ggplot(hubei_diff_ln, aes(x=time, y=first_diff_log_cases)) +
   geom_point(size = 0.5) +
   geom_line(aes(y = (pred.hubei)), size = 0.5) +
-  scale_x_continuous(limits = c(0, 90)) +
+  scale_x_continuous(limits = c(0, 365)) +
   scale_y_continuous(limits = c(0, 1)) +
   ggtitle("Hubei Cases") +
   xlab("Days from first 10 confirmed cases") + 
@@ -904,7 +904,7 @@ RMSE(y, pred.iran)
 ML.plot.iran <- ggplot(iran_diff_ln, aes(x=time, y=first_diff_log_cases)) +
   geom_point(size = 0.5) +
   geom_line(aes(y = (pred.iran)), size = 0.5) +
-  scale_x_continuous(limits = c(0, 90)) +
+  scale_x_continuous(limits = c(0, 365)) +
   scale_y_continuous(limits = c(0, 1)) +
   ggtitle("Iran Cases") +
   xlab("Days from first 100 confirmed cases") + 
@@ -933,7 +933,7 @@ RMSE(y, pred.italy)
 ML.plot.italy <- ggplot(italy_diff_ln, aes(x=time, y=first_diff_log_cases)) +
   geom_point(size = 0.5) +
   geom_line(aes(y = (pred.italy)), size = 0.5) +
-  scale_x_continuous(limits = c(0, 90)) +
+  scale_x_continuous(limits = c(0, 365)) +
   scale_y_continuous(limits = c(0, 1)) +
   ggtitle("Italy Cases") +
   xlab("Days from first 100 confirmed cases") + 
@@ -962,7 +962,7 @@ RMSE(y, pred.japan)
 ML.plot.japan <- ggplot(japan_diff_ln, aes(x=time, y=first_diff_log_cases)) +
   geom_point(size = 0.5) +
   geom_line(aes(y = (pred.japan)), size = 0.5) +
-  scale_x_continuous(limits = c(0, 90)) +
+  scale_x_continuous(limits = c(0, 365)) +
   scale_y_continuous(limits = c(0, 1)) +
   ggtitle("Japan Cases") +
   xlab("Days from first 100 confirmed cases") + 
@@ -991,7 +991,7 @@ RMSE(y, pred.korea)
 ML.plot.korea <- ggplot(korea_diff_ln, aes(x=time, y=first_diff_log_cases)) +
   geom_point(size = 0.5) +
   geom_line(aes(y = (pred.korea)), size = 0.5) +
-  scale_x_continuous(limits = c(0, 90)) +
+  scale_x_continuous(limits = c(0, 365)) +
   scale_y_continuous(limits = c(0, 1)) +
   ggtitle("South Korea Cases") +
   xlab("Days from first 100 confirmed cases") + 
@@ -1020,7 +1020,7 @@ RMSE(y, pred.netherlands)
 ML.plot.netherlands <- ggplot(netherlands_diff_ln, aes(x=time, y=first_diff_log_cases)) +
   geom_point(size = 0.5) +
   geom_line(aes(y = (pred.netherlands)), size = 0.5) +
-  scale_x_continuous(limits = c(0, 90)) +
+  scale_x_continuous(limits = c(0, 365)) +
   scale_y_continuous(limits = c(0, 1)) +
   ggtitle("Netherlands Cases") +
   xlab("Days from first 100 confirmed cases") + 
@@ -1049,7 +1049,7 @@ RMSE(y, pred.norway)
 ML.plot.norway <- ggplot(norway_diff_ln, aes(x=time, y=first_diff_log_cases)) +
   geom_point(size = 0.5) +
   geom_line(aes(y = (pred.norway)), size = 0.5) +
-  scale_x_continuous(limits = c(0, 90)) +
+  scale_x_continuous(limits = c(0, 365)) +
   scale_y_continuous(limits = c(0, 1)) +
   ggtitle("Norway Cases") +
   xlab("Days from first 100 confirmed cases") + 
@@ -1078,7 +1078,7 @@ RMSE(y, pred.spain)
 ML.plot.spain <- ggplot(spain_diff_ln, aes(x=time, y=first_diff_log_cases)) +
   geom_point(size = 0.5) +
   geom_line(aes(y = (pred.spain)), size = 0.5) +
-  scale_x_continuous(limits = c(0, 90)) +
+  scale_x_continuous(limits = c(0, 365)) +
   scale_y_continuous(limits = c(0, 1)) +
   ggtitle("Spain Cases") +
   xlab("Days from first 100 confirmed cases") + 
@@ -1107,7 +1107,7 @@ RMSE(y, pred.sweden)
 ML.plot.sweden <- ggplot(sweden_diff_ln, aes(x=time, y=first_diff_log_cases)) +
   geom_point(size = 0.5) +
   geom_line(aes(y = (pred.sweden)), size = 0.5) +
-  scale_x_continuous(limits = c(0, 90)) +
+  scale_x_continuous(limits = c(0, 365)) +
   scale_y_continuous(limits = c(0, 1)) +
   ggtitle("Sweden Cases") +
   xlab("Days from first 100 confirmed cases") + 
@@ -1136,7 +1136,7 @@ RMSE(y, pred.switzerland)
 ML.plot.switzerland <- ggplot(switzerland_diff_ln, aes(x=time, y=first_diff_log_cases)) +
   geom_point(size = 0.5) +
   geom_line(aes(y = (pred.switzerland)), size = 0.5) +
-  scale_x_continuous(limits = c(0, 90)) +
+  scale_x_continuous(limits = c(0, 365)) +
   scale_y_continuous(limits = c(0, 1)) +
   ggtitle("Switzerland Cases") +
   xlab("Days from first 100 confirmed cases") + 
@@ -1165,7 +1165,7 @@ RMSE(y, pred.uk)
 ML.plot.uk <- ggplot(uk_diff_ln, aes(x=time, y=first_diff_log_cases)) +
   geom_point(size = 0.5) +
   geom_line(aes(y = (pred.uk)), size = 0.5) +
-  scale_x_continuous(limits = c(0, 90)) +
+  scale_x_continuous(limits = c(0, 365)) +
   scale_y_continuous(limits = c(0, 1)) +
   ggtitle("United Kingdom Cases") +
   xlab("Days from first 100 confirmed cases") + 
@@ -1194,7 +1194,7 @@ RMSE(y, pred.us)
 ML.plot.us <- ggplot(us_diff_ln, aes(x=time, y=first_diff_log_cases)) +
   geom_point(size = 0.5) +
   geom_line(aes(y = (pred.us)), size = 0.5) +
-  scale_x_continuous(limits = c(0, 90)) +
+  scale_x_continuous(limits = c(0, 365)) +
   scale_y_continuous(limits = c(0, 1)) +
   ggtitle("United States Cases") +
   xlab("Days from first 100 confirmed cases") + 
@@ -1231,7 +1231,7 @@ ggplot(deaths.global_diff_ln, aes(x=time, y=first_diff_log_deaths)) +
   geom_point(aes(color=country),size = 0.5) +
   geom_line(aes(y = (pred.global)), size = 0.5) +
   scale_fill_manual(values = mycolors) +
-  scale_x_continuous(limits = c(0, 90)) +
+  scale_x_continuous(limits = c(0, 365)) +
   scale_y_continuous(limits = c(0, 1)) +
   ggtitle("Global Deaths") +
   xlab("Days from first 10 confirmed deaths") + 
@@ -1256,7 +1256,7 @@ RMSE(y, pred.canada)
 ML.plot.canada <- ggplot(deaths.canada_diff_ln, aes(x=time, y=first_diff_log_deaths)) +
   geom_point(size = 0.5) +
   geom_line(aes(y = (pred.canada)), size = 0.5) +
-  scale_x_continuous(limits = c(0, 90)) +
+  scale_x_continuous(limits = c(0, 365)) +
   scale_y_continuous(limits = c(0, 1)) +
   ggtitle("Canada Deaths") +
   xlab("Days from first 10 confirmed deaths") + 
@@ -1285,7 +1285,7 @@ RMSE(y, pred.china_nohubei)
 ML.plot.china_nohubei <- ggplot(deaths.china_nohubei_diff_ln, aes(x=time, y=first_diff_log_deaths)) +
   geom_point(size = 0.5) +
   geom_line(aes(y = (pred.china_nohubei)), size = 0.5) +
-  scale_x_continuous(limits = c(0, 90)) +
+  scale_x_continuous(limits = c(0, 365)) +
   scale_y_continuous(limits = c(0, 1)) +
   ggtitle("China Deaths (excluding Hubei)") +
   xlab("Days from first 10 confirmed deaths") + 
@@ -1314,7 +1314,7 @@ RMSE(y, pred.france)
 ML.plot.france <- ggplot(deaths.france_diff_ln, aes(x=time, y=first_diff_log_deaths)) +
   geom_point(size = 0.5) +
   geom_line(aes(y = (pred.france)), size = 0.5) +
-  scale_x_continuous(limits = c(0, 90)) +
+  scale_x_continuous(limits = c(0, 365)) +
   scale_y_continuous(limits = c(0, 1)) +
   ggtitle("France Deaths") +
   xlab("Days from first 10 confirmed deaths") + 
@@ -1343,7 +1343,7 @@ RMSE(y, pred.germany)
 ML.plot.germany <- ggplot(deaths.germany_diff_ln, aes(x=time, y=first_diff_log_deaths)) +
   geom_point(size = 0.5) +
   geom_line(aes(y = (pred.germany)), size = 0.5) +
-  scale_x_continuous(limits = c(0, 90)) +
+  scale_x_continuous(limits = c(0, 365)) +
   scale_y_continuous(limits = c(0, 1)) +
   ggtitle("Germany Deaths") +
   xlab("Days from first 10 confirmed deaths") + 
@@ -1372,7 +1372,7 @@ RMSE(y, pred.hubei)
 ML.plot.hubei <- ggplot(deaths.hubei_diff_ln, aes(x=time, y=first_diff_log_deaths)) +
   geom_point(size = 0.5) +
   geom_line(aes(y = (pred.hubei)), size = 0.5) +
-  scale_x_continuous(limits = c(0, 90)) +
+  scale_x_continuous(limits = c(0, 365)) +
   scale_y_continuous(limits = c(0, 1)) +
   ggtitle("Hubei Deaths") +
   xlab("Days from first 10 confirmed deaths") + 
@@ -1401,7 +1401,7 @@ RMSE(y, pred.iran)
 ML.plot.iran <- ggplot(deaths.iran_diff_ln, aes(x=time, y=first_diff_log_deaths)) +
   geom_point(size = 0.5) +
   geom_line(aes(y = (pred.iran)), size = 0.5) +
-  scale_x_continuous(limits = c(0, 90)) +
+  scale_x_continuous(limits = c(0, 365)) +
   scale_y_continuous(limits = c(0, 1)) +
   ggtitle("Iran Deaths") +
   xlab("Days from first 10 confirmed deaths") + 
@@ -1430,7 +1430,7 @@ RMSE(y, pred.italy)
 ML.plot.italy <- ggplot(deaths.italy_diff_ln, aes(x=time, y=first_diff_log_deaths)) +
   geom_point(size = 0.5) +
   geom_line(aes(y = (pred.italy)), size = 0.5) +
-  scale_x_continuous(limits = c(0, 90)) +
+  scale_x_continuous(limits = c(0, 365)) +
   scale_y_continuous(limits = c(0, 1)) +
   ggtitle("Italy Deaths") +
   xlab("Days from first 10 confirmed deaths") + 
@@ -1459,7 +1459,7 @@ RMSE(y, pred.japan)
 ML.plot.japan <- ggplot(deaths.japan_diff_ln, aes(x=time, y=first_diff_log_deaths)) +
   geom_point(size = 0.5) +
   geom_line(aes(y = (pred.japan)), size = 0.5) +
-  scale_x_continuous(limits = c(0, 90)) +
+  scale_x_continuous(limits = c(0, 365)) +
   scale_y_continuous(limits = c(0, 1)) +
   ggtitle("Japan Deaths") +
   xlab("Days from first 10 confirmed deaths") + 
@@ -1488,7 +1488,7 @@ RMSE(y, pred.korea)
 ML.plot.korea <- ggplot(deaths.korea_diff_ln, aes(x=time, y=first_diff_log_deaths)) +
   geom_point(size = 0.5) +
   geom_line(aes(y = (pred.korea)), size = 0.5) +
-  scale_x_continuous(limits = c(0, 90)) +
+  scale_x_continuous(limits = c(0, 365)) +
   scale_y_continuous(limits = c(0, 1)) +
   ggtitle("South Korea Deaths") +
   xlab("Days from first 10 confirmed deaths") + 
@@ -1517,7 +1517,7 @@ RMSE(y, pred.netherlands)
 ML.plot.netherlands <- ggplot(deaths.netherlands_diff_ln, aes(x=time, y=first_diff_log_deaths)) +
   geom_point(size = 0.5) +
   geom_line(aes(y = (pred.netherlands)), size = 0.5) +
-  scale_x_continuous(limits = c(0, 90)) +
+  scale_x_continuous(limits = c(0, 365)) +
   scale_y_continuous(limits = c(0, 1)) +
   ggtitle("Netherlands Deaths") +
   xlab("Days from first 10 confirmed deaths") + 
@@ -1546,7 +1546,7 @@ RMSE(y, pred.norway)
 ML.plot.norway <- ggplot(deaths.norway_diff_ln, aes(x=time, y=first_diff_log_deaths)) +
   geom_point(size = 0.5) +
   geom_line(aes(y = (pred.norway)), size = 0.5) +
-  scale_x_continuous(limits = c(0, 90)) +
+  scale_x_continuous(limits = c(0, 365)) +
   scale_y_continuous(limits = c(0, 1)) +
   ggtitle("Norway Deaths") +
   xlab("Days from first 10 confirmed deaths") + 
@@ -1575,7 +1575,7 @@ RMSE(y, pred.spain)
 ML.plot.spain <- ggplot(deaths.spain_diff_ln, aes(x=time, y=first_diff_log_deaths)) +
   geom_point(size = 0.5) +
   geom_line(aes(y = (pred.spain)), size = 0.5) +
-  scale_x_continuous(limits = c(0, 90)) +
+  scale_x_continuous(limits = c(0, 365)) +
   scale_y_continuous(limits = c(0, 1)) +
   ggtitle("Spain Deaths") +
   xlab("Days from first 10 confirmed deaths") + 
@@ -1604,7 +1604,7 @@ RMSE(y, pred.sweden)
 ML.plot.sweden <- ggplot(deaths.sweden_diff_ln, aes(x=time, y=first_diff_log_deaths)) +
   geom_point(size = 0.5) +
   geom_line(aes(y = (pred.sweden)), size = 0.5) +
-  scale_x_continuous(limits = c(0, 90)) +
+  scale_x_continuous(limits = c(0, 365)) +
   scale_y_continuous(limits = c(0, 1)) +
   ggtitle("Sweden Deaths") +
   xlab("Days from first 10 confirmed deaths") + 
@@ -1633,7 +1633,7 @@ RMSE(y, pred.switzerland)
 ML.plot.switzerland <- ggplot(deaths.switzerland_diff_ln, aes(x=time, y=first_diff_log_deaths)) +
   geom_point(size = 0.5) +
   geom_line(aes(y = (pred.switzerland)), size = 0.5) +
-  scale_x_continuous(limits = c(0, 90)) +
+  scale_x_continuous(limits = c(0, 365)) +
   scale_y_continuous(limits = c(0, 1)) +
   ggtitle("Switzerland Deaths") +
   xlab("Days from first 10 confirmed deaths") + 
@@ -1662,7 +1662,7 @@ RMSE(y, pred.uk)
 ML.plot.uk <- ggplot(deaths.uk_diff_ln, aes(x=time, y=first_diff_log_deaths)) +
   geom_point(size = 0.5) +
   geom_line(aes(y = (pred.uk)), size = 0.5) +
-  scale_x_continuous(limits = c(0, 90)) +
+  scale_x_continuous(limits = c(0, 365)) +
   scale_y_continuous(limits = c(0, 1)) +
   ggtitle("United Kingdom Deaths") +
   xlab("Days from first 10 confirmed deaths") + 
@@ -1691,7 +1691,7 @@ RMSE(y, pred.us)
 ML.plot.us <- ggplot(deaths.us_diff_ln, aes(x=time, y=first_diff_log_deaths)) +
   geom_point(size = 0.5) +
   geom_line(aes(y = (pred.us)), size = 0.5) +
-  scale_x_continuous(limits = c(0, 90)) +
+  scale_x_continuous(limits = c(0, 365)) +
   scale_y_continuous(limits = c(0, 1)) +
   ggtitle("United States Deaths") +
   xlab("Days from first 10 confirmed deaths") + 
