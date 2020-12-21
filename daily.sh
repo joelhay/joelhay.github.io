@@ -1,5 +1,5 @@
 #!/bin/bash
-cd /home/graphs/joelhay.github.io
+cd Test
 NOW=$( date '+%F_%H:%M:%S' )
 Rscript daily.R
 Rscript -e "require ('rmarkdown'); render('daily.Rmd')"
