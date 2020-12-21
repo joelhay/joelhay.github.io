@@ -7,5 +7,5 @@ Rscript -e "require ('rmarkdown'); render('daily.Rmd')"
 mv daily.html index.html
 git add index.html
 git commit -a -m $NOW
-git push -u origin master
+git push
 
